@@ -1,0 +1,11 @@
+{
+  "name": "family-temple-project",
+  "version": "1.0.0",
+  "description": "Family Temple Website",
+  "main": "index.html",
+  "scripts": {
+    "dev": "npx serve family-temple"
+  },
+  "author": "",
+  "license": "ISC"
+}

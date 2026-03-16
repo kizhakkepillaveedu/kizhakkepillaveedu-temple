@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Next.js
+.next/
+out/
+
+# Environment variables
+.env*.local
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Build files
+dist/
+build/
