@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ml">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vazhipadu Booking · Kizhakke Pilla Veedu</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&family=Noto+Sans+Malayalam:wght@400;500;600;700&family=Noto+Serif+Malayalam:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body data-lang="ml">
+  <div id="layout-header"></div>
+
+  <section class="page-hero">
+    <div class="container">
+      <h1 data-i18n="vazhipadu.title">Vazhipadu Booking</h1>
+      <p data-i18n="vazhipadu.sub">Offer your prayers from anywhere.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div id="puja-grid" class="grid grid-3"></div>
+    </div>
+  </section>
+
+  <!-- Booking Modal -->
+  <div class="modal-backdrop" id="book-modal">
+    <div class="modal">
+      <div class="modal-head">
+        <h3 class="modal-title" id="book-puja-name">—</h3>
+        <button class="modal-close" data-close aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M6 6l12 12M6 18L18 6" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <form id="book-form" class="form" style="padding:0;border:none;box-shadow:none;background:transparent;">
+        <input type="hidden" name="pujaId" id="book-puja-id" />
+        <div class="form-row cols-2">
+          <div class="form-field">
+            <label data-i18n="vazhipadu.devotee">Devotee Name</label>
+            <input type="text" name="name" required />
+          </div>
+          <div class="form-field">
+            <label data-i18n="vazhipadu.star">Birth Star</label>
+            <input type="text" name="star" />
+          </div>
+        </div>
+        <div class="form-row cols-2">
+          <div class="form-field">
+            <label data-i18n="vazhipadu.phone">Phone Number</label>
+            <input type="tel" name="phone" required />
+          </div>
+          <div class="form-field">
+            <label data-i18n="vazhipadu.date">Preferred Date</label>
+            <input type="date" name="date" required />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-field">
+            <label data-i18n="vazhipadu.notes">Special Notes</label>
+            <textarea name="notes" rows="3"></textarea>
+          </div>
+        </div>
+        <div class="flex-between" style="margin-top:8px;">
+          <button type="button" class="btn btn-ghost" data-close data-i18n="admin.cancel">Cancel</button>
+          <button type="submit" class="btn btn-primary" data-i18n="vazhipadu.confirm">Confirm Booking</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="layout-footer"></div>
+
+  <script src="js/i18n.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/layout.js"></script>
+  <script src="js/main.js"></script>
+  <script>
+    const PujaPage = {
+      render() {
+        const grid = document.getElementById('puja-grid');
+        const lang = I18N.current;
+        const pujas = Store.getPujas();
+        if (!pujas.length) {
+          grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M9 10h.01M15 10h.01M9 16c1-1 5-1 6 0"/></svg>
+            <p>${I18N.t('vazhipadu.empty')}</p>
+          </div>`;
+          return;
+        }
+        grid.innerHTML = pujas.map(p => `
+          <div class="puja-card">
+            <h3 class="puja-name">${p[`name_${lang}`] || p.name_en}</h3>
+            <p class="puja-desc">${p[`desc_${lang}`] || p.desc_en || ''}</p>
+            <div class="puja-price"><span class="cur">₹</span><span class="amt">${p.price}</span></div>
+            <button class="btn btn-primary btn-block" data-puja="${p.id}">${I18N.t('vazhipadu.book')}</button>
+          </div>
+        `).join('');
+
+        grid.querySelectorAll('button[data-puja]').forEach(btn => {
+          btn.addEventListener('click', () => this.openBooking(btn.dataset.puja));
+        });
+      },
+
+      openBooking(pujaId) {
+        const puja = Store.getPujas().find(p => p.id === pujaId);
+        if (!puja) return;
+        const lang = I18N.current;
+        document.getElementById('book-puja-name').textContent = puja[`name_${lang}`] || puja.name_en;
+        document.getElementById('book-puja-id').value = puja.id;
+        document.getElementById('book-form').reset();
+        document.getElementById('book-puja-id').value = puja.id;
+        UI.openModal('book-modal');
+      },
+
+      submitBooking(e) {
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        const pujaId = fd.get('pujaId');
+        const puja = Store.getPujas().find(p => p.id === pujaId);
+        if (!puja) return;
+        Store.addBooking({
+          pujaId,
+          pujaName: puja.name_en,
+          pujaNameMl: puja.name_ml,
+          price: puja.price,
+          name: fd.get('name'),
+          star: fd.get('star'),
+          phone: fd.get('phone'),
+          date: fd.get('date'),
+          notes: fd.get('notes')
+        });
+        UI.closeModal('book-modal');
+        UI.toast(I18N.t('vazhipadu.success'), 'success');
+      },
+
+      init() {
+        this.render();
+        document.getElementById('book-form').addEventListener('submit', e => this.submitBooking(e));
+        document.addEventListener('lang:change', () => this.render());
+      }
+    };
+    document.addEventListener('DOMContentLoaded', () => PujaPage.init());
+  </script>
+</body>
+</html>

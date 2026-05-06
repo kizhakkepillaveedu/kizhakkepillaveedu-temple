@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ml">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin · Kizhakke Pilla Veedu</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&family=Noto+Sans+Malayalam:wght@400;500;600;700&family=Noto+Serif+Malayalam:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body data-lang="ml">
+  <div id="layout-header"></div>
+
+  <!-- Login -->
+  <section id="login-view" class="container">
+    <div class="login-box">
+      <div class="lock">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+      </div>
+      <h2 data-i18n="admin.login.title">Admin Access</h2>
+      <p class="hint" data-i18n="admin.login.hint">Enter the admin password to manage temple data.</p>
+      <form id="login-form">
+        <div class="form-field" style="margin-bottom:16px;text-align:left;">
+          <input type="password" id="login-pw" data-i18n-placeholder="admin.login.placeholder" placeholder="Password" required />
+        </div>
+        <button type="submit" class="btn btn-primary btn-block" data-i18n="admin.login.btn">Sign In</button>
+        <p id="login-err" style="color:#b91c1c;margin-top:12px;font-size:.88rem;display:none;" data-i18n="admin.login.error">Incorrect password.</p>
+      </form>
+      <p style="margin-top:18px;font-size:.78rem;color:var(--color-text-muted);">Default password: <code>admin123</code></p>
+    </div>
+  </section>
+
+  <!-- Admin Shell -->
+  <section id="admin-view" class="hidden">
+    <div class="admin-shell">
+      <aside class="admin-sidebar">
+        <nav class="admin-nav" id="admin-nav">
+          <button class="admin-nav-link active" data-tab="dashboard">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            <span data-i18n="admin.nav.dashboard">Dashboard</span>
+          </button>
+          <button class="admin-nav-link" data-tab="bookings">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 4h14a1 1 0 0 1 1 1v15l-4-3-4 3-4-3-4 3V5a1 1 0 0 1 1-1z"/></svg>
+            <span data-i18n="admin.nav.bookings">Bookings</span>
+          </button>
+          <button class="admin-nav-link" data-tab="pujas">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M5 9h14M5 15h14" stroke-linecap="round"/></svg>
+            <span data-i18n="admin.nav.pujas">Pujas</span>
+          </button>
+          <button class="admin-nav-link" data-tab="festivals">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+            <span data-i18n="admin.nav.festivals">Festivals</span>
+          </button>
+          <button class="admin-nav-link" data-tab="timings">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+            <span data-i18n="admin.nav.timings">Timings</span>
+          </button>
+          <button class="admin-nav-link" id="logout-btn" style="margin-top:auto;color:#b91c1c;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+            <span data-i18n="admin.logout">Logout</span>
+          </button>
+        </nav>
+      </aside>
+
+      <main class="admin-main">
+        <!-- Dashboard -->
+        <div class="admin-tab" data-pane="dashboard">
+          <div class="admin-head">
+            <h2 data-i18n="admin.nav.dashboard">Dashboard</h2>
+          </div>
+          <div class="admin-stats" id="stats-grid"></div>
+          <div class="admin-head"><h3 style="font-size:1.1rem;" data-i18n="admin.nav.bookings">Recent Bookings</h3></div>
+          <div id="recent-bookings"></div>
+        </div>
+
+        <!-- Bookings -->
+        <div class="admin-tab hidden" data-pane="bookings">
+          <div class="admin-head">
+            <h2 data-i18n="admin.nav.bookings">Bookings</h2>
+          </div>
+          <div id="bookings-list"></div>
+        </div>
+
+        <!-- Pujas -->
+        <div class="admin-tab hidden" data-pane="pujas">
+          <div class="admin-head">
+            <h2 data-i18n="admin.nav.pujas">Manage Pujas</h2>
+            <button class="btn btn-primary btn-sm" id="add-puja-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg>
+              <span data-i18n="admin.add.puja">Add Puja</span>
+            </button>
+          </div>
+          <div id="pujas-list"></div>
+        </div>
+
+        <!-- Festivals -->
+        <div class="admin-tab hidden" data-pane="festivals">
+          <div class="admin-head">
+            <h2 data-i18n="admin.nav.festivals">Festivals</h2>
+            <button class="btn btn-primary btn-sm" id="add-festival-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg>
+              <span data-i18n="admin.add.festival">Add Festival</span>
+            </button>
+          </div>
+          <div id="festivals-list"></div>
+        </div>
+
+        <!-- Timings -->
+        <div class="admin-tab hidden" data-pane="timings">
+          <div class="admin-head"><h2 data-i18n="admin.nav.timings">Temple Timings</h2></div>
+          <div id="timings-editor"></div>
+        </div>
+      </main>
+    </div>
+  </section>
+
+  <!-- Puja Modal -->
+  <div class="modal-backdrop" id="puja-modal">
+    <div class="modal">
+      <div class="modal-head">
+        <h3 class="modal-title" id="puja-modal-title">Add Puja</h3>
+        <button class="modal-close" data-close><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M6 6l12 12M6 18L18 6" stroke-linecap="round"/></svg></button>
+      </div>
+      <form id="puja-form">
+        <input type="hidden" name="id" />
+        <div class="form-row cols-2">
+          <div class="form-field"><label data-i18n="admin.field.name">Name</label><input type="text" name="name_en" required /></div>
+          <div class="form-field"><label data-i18n="admin.field.name.ml">Name (Malayalam)</label><input type="text" name="name_ml" /></div>
+        </div>
+        <div class="form-row cols-2">
+          <div class="form-field"><label data-i18n="admin.field.desc">Description</label><textarea name="desc_en" rows="2"></textarea></div>
+          <div class="form-field"><label data-i18n="admin.field.desc.ml">Description (Malayalam)</label><textarea name="desc_ml" rows="2"></textarea></div>
+        </div>
+        <div class="form-row">
+          <div class="form-field"><label data-i18n="admin.field.price">Price (₹)</label><input type="number" name="price" min="0" required /></div>
+        </div>
+        <div class="flex-between" style="margin-top:8px;">
+          <button type="button" class="btn btn-ghost" data-close data-i18n="admin.cancel">Cancel</button>
+          <button type="submit" class="btn btn-primary" data-i18n="admin.save">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Festival Modal -->
+  <div class="modal-backdrop" id="festival-modal">
+    <div class="modal">
+      <div class="modal-head">
+        <h3 class="modal-title" id="festival-modal-title">Add Festival</h3>
+        <button class="modal-close" data-close><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M6 6l12 12M6 18L18 6" stroke-linecap="round"/></svg></button>
+      </div>
+      <form id="festival-form">
+        <input type="hidden" name="id" />
+        <div class="form-row cols-2">
+          <div class="form-field"><label data-i18n="admin.field.name">Name</label><input type="text" name="name_en" required /></div>
+          <div class="form-field"><label data-i18n="admin.field.name.ml">Name (Malayalam)</label><input type="text" name="name_ml" /></div>
+        </div>
+        <div class="form-row cols-2">
+          <div class="form-field"><label data-i18n="admin.field.dateLabel">Date Label</label><input type="text" name="date_en" placeholder="e.g. Vrischikam 1" /></div>
+          <div class="form-field"><label data-i18n="admin.field.dateLabel.ml">Date Label (ML)</label><input type="text" name="date_ml" /></div>
+        </div>
+        <div class="form-row cols-2">
+          <div class="form-field"><label data-i18n="admin.field.desc">Description</label><textarea name="desc_en" rows="2"></textarea></div>
+          <div class="form-field"><label data-i18n="admin.field.desc.ml">Description (Malayalam)</label><textarea name="desc_ml" rows="2"></textarea></div>
+        </div>
+        <div class="flex-between" style="margin-top:8px;">
+          <button type="button" class="btn btn-ghost" data-close data-i18n="admin.cancel">Cancel</button>
+          <button type="submit" class="btn btn-primary" data-i18n="admin.save">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="layout-footer"></div>
+
+  <script src="js/i18n.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/layout.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>

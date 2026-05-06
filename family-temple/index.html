@@ -1,311 +1,454 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ml">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sree Kudumbakshethram</title>
-    <meta name="description" content="Official website of our divine Family Temple and Lineage.">
-    <link rel="stylesheet" href="style.css">
-    <link
-        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=Poppins:wght@300;400;500&display=swap"
-        rel="stylesheet">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kizhakke Pilla Veedu Sree Bhagavathi Temple</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&family=Noto+Sans+Malayalam:wght@400;500;600;700&family=Noto+Serif+Malayalam:wght@500;600;700&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
 </head>
 
-<body>
-    <nav id="navbar" class="glass-nav">
-        <div class="nav-logo serif">Sree Kudumbakshethram</div>
-        <div class="nav-links">
-            <a href="#home">Home</a>
-            <a href="#about-god">The Divine</a>
-            <a href="#temple-details">The Temple</a>
-            <a href="#family-tree-section">Lineage</a>
-            <button class="book-btn" id="nav-book-btn">Book Vazhipad</button>
+<body data-lang="ml" class="has-hero">
+  <div id="layout-header"></div>
+
+  <!-- Hero / Banner (slider: video ↔ family veedu) -->
+  <section class="hero">
+    <div class="hero-slides">
+
+      <!-- Slide 1: Devi Video -->
+      <div class="hero-slide active" data-slide="0">
+        <div class="hero-bg">
+          <video src="image/devi.mp4" autoplay muted playsinline poster="assets/deity_main.jpg"></video>
         </div>
-        <div class="mobile-menu-btn">☰</div>
-    </nav>
-
-    <!-- Entry Screen for Audio Autoplay Bypass -->
-    <div id="entry-screen">
-        <h1 class="serif"
-            style="color:#E2B659; font-size: 4rem; text-align:center; margin-bottom:20px; text-shadow: 0 0 30px rgba(226, 182, 89, 0.6);">
-            Sree Kudumbakshethram</h1>
-        <p style="color:#CCC; font-size:1.2rem; margin-bottom:40px; letter-spacing: 4px;">EXPERIENCE THE DIVINE BLESSING
-        </p>
-        <button id="enter-btn" class="enter-btn">ENTER TEMPLE</button>
-    </div>
-
-    <!-- Hidden YouTube Player for Background Divine Song Loop (8:24 - 9:08) -->
-    <div id="yt-player" style="display:none;"></div>
-
-
-    <main id="main-content">
-        <!-- Hero Section -->
-        <section class="hero" id="home">
-            <img src="assets/deity_main.jpg" alt="Divine Deity" class="hero-img">
-            <div class="hero-overlay"></div>
-            <div class="hero-content">
-                <h1 class="serif">Sree Paradevatha</h1>
-                <p>Guiding light of our generations</p>
-                <a href="#about-god" class="scroll-down">↓</a>
-            </div>
-        </section>
-
-        <!-- Description of the God -->
-        <section id="about-god">
-            <h2 class="section-title serif glow-text">The Divine Presence</h2>
-            <div class="content-grid">
-                <div class="text-box">
-                    <h3 class="serif">Omnipresent Almighty</h3>
-                    <p>
-                        Our beloved deity is the eternal protector and the source of all prosperity for our lineage.
-                        Worshipped for generations with absolute devotion, the divine presence in this temple brings
-                        peace, health, and infinite blessings to all family members. The history of our devotion spans
-                        centuries, manifesting in miraculous ways to safeguard our beloved roots.
-                    </p>
-                </div>
-                <div class="img-box glow-img">
-                    <img src="assets/deity_front.png" alt="Deity Close Up">
-                </div>
-            </div>
-        </section>
-
-        <!-- About the Temple & Location -->
-        <section id="temple-details" style="background: rgba(255, 255, 255, 0.02);">
-            <h2 class="section-title serif glow-text">Our Kudumbakshethram</h2>
-            <div class="content-grid reverse">
-                <div class="text-box">
-                    <h3 class="serif">A Sanctuary of Harmony</h3>
-                    <p>
-                        Established by our ancestors, this sacred ground is the spiritual heart of our family.
-                        Surrounded by serene nature, the temple architecture features traditional elements, brass lamps,
-                        and ancient woodwork that echoes the chants of centuries.
-                    </p>
-                    <br>
-                    <p><strong>Location:</strong> NH Highway, Kerala, India (Update Your Location Here)</p>
-                    <p><strong>Offerings:</strong> Regular poojas are conducted on the first of every Malayalam month.
-                    </p>
-                </div>
-                <div class="img-box glow-img">
-                    <img src="assets/temple_exterior.png" alt="Temple Exterior">
-                </div>
-            </div>
-        </section>
-
-        <!-- Family Tree Section -->
-        <section id="family-tree-section" class="tree-bg">
-            <h2 class="section-title serif glow-text" style="font-size: 3.5rem;">Family Lineage<br><span
-                    style="font-size: 2rem; color:#C78B3A;">( Tharavadu )</span></h2>
-            <p class="subtitle">
-                The grand roots of our heritage. Click on the golden branches to unveil the history of each ancestral
-                house.
+        <div class="container">
+          <div class="hero-content">
+            <h1 class="hero-title">
+              <span data-i18n="hero.title.1">A Living</span>
+              <span class="highlight" data-i18n="hero.title.highlight">Sanctuary</span>
+              <span data-i18n="hero.title.2">of Faith & Family</span>
+            </h1>
+            <p class="hero-sub" data-i18n="hero.sub">
+              For generations, the Kizhakke Pilla Veedu Sree Bhagavathi Temple has stood as the spiritual heart of our
+              lineage.
             </p>
-
-            <div class="tree-container">
-                <div class="tree">
-                    <ul>
-                        <li>
-                            <a href="#" class="family-node main-node" data-name="Moola Tharavadu"
-                                data-desc="The primordial ancestral home where our history began. Founded by our great ancestors, holding the supreme authority and heritage of our lineage.">
-                                <div class="node-ring">
-                                    <img src="assets/family_avatar.png" alt="Avatar">
-                                </div>
-                                <span class="serif">Main Tharavadu</span>
-                            </a>
-                            <ul>
-                                <li>
-                                    <a href="#" class="family-node" data-name="Kizhakke Veedu"
-                                        data-desc="The eastern branch of the family, known for agricultural heritage and temple administration.">
-                                        <div class="node-ring"><img src="assets/family_avatar.png" alt="Avatar"></div>
-                                        <span class="serif">Kizhakke Veedu</span>
-                                    </a>
-                                    <ul>
-                                        <li>
-                                            <a href="#" class="family-node" data-name="Sivan's Family"
-                                                data-desc="Descendants of Sivan. Currently settled across the city with deep ties to the temple traditions.">
-                                                <div class="node-ring"><img src="assets/family_avatar.png" alt="Avatar">
-                                                </div>
-                                                <span class="serif">Sivan's Family</span>
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a href="#" class="family-node" data-name="Narayanan's Family"
-                                                data-desc="Dedicated to organizing the annual festival. They oversee the traditional arts.">
-                                                <div class="node-ring"><img src="assets/family_avatar.png" alt="Avatar">
-                                                </div>
-                                                <span class="serif">Narayanans</span>
-                                            </a>
-                                        </li>
-                                    </ul>
-                                </li>
-                                <li>
-                                    <a href="#" class="family-node" data-name="Padinjare Veedu"
-                                        data-desc="The western branch, prominent in education and literature, maintaining the historical records of our family.">
-                                        <div class="node-ring"><img src="assets/family_avatar.png" alt="Avatar"></div>
-                                        <span class="serif">Padinjare Veedu</span>
-                                    </a>
-                                    <ul>
-                                        <li>
-                                            <a href="#" class="family-node" data-name="Menon's Family"
-                                                data-desc="Current generation actively contributing to foreign trade while upholding family values.">
-                                                <div class="node-ring"><img src="assets/family_avatar.png" alt="Avatar">
-                                                </div>
-                                                <span class="serif">Menon's Family</span>
-                                            </a>
-                                        </li>
-                                    </ul>
-                                </li>
-                            </ul>
-                        </li>
-                    </ul>
-                </div>
+            <div class="hero-actions">
+              <a href="vazhipadu.html" class="btn btn-primary" data-i18n="hero.cta.primary">Book an Offering</a>
+              <a href="#festivals" class="btn btn-ghost" data-i18n="hero.cta.secondary">Festival Calendar</a>
             </div>
-        </section>
-    </main>
-
-    <!-- Vazhipad Booking Modal (Multi-step) -->
-    <div class="modal" id="booking-modal">
-        <div class="modal-content booking-content">
-            <div class="modal-border">
-                <span class="modal-close" id="booking-close">&times;</span>
-
-                <!-- Step 1: Login -->
-                <div id="step-login" class="booking-step active">
-                    <h2 class="serif glow-text">Divine Login</h2>
-                    <p>Enter your mobile number and password to continue.</p>
-                    <div class="input-group">
-                        <input type="tel" id="user-phone" placeholder="Phone Number (10 digits)" maxlength="10">
-                        <input type="password" id="user-password" placeholder="Password">
-                    </div>
-                    <button class="book-btn w-100" id="login-btn">Login / Register</button>
-                </div>
-
-                <!-- Step 3: Profile Details -->
-                <div id="step-profile" class="booking-step">
-                    <h2 class="serif glow-text">Family Member Details</h2>
-                    <p>Please provide your basic details for the temple records.</p>
-                    <div class="input-group">
-                        <input type="text" id="user-name" placeholder="Full Name">
-                        <textarea id="user-address" placeholder="Address"></textarea>
-                    </div>
-                    <button class="book-btn w-100" id="save-profile-btn">Proceed to Booking</button>
-                </div>
-
-                <!-- Step 4: Vazhipad Form (Receipt Style) -->
-                <div id="step-vazhipad" class="booking-step">
-                    <div class="receipt-header">
-                        <h2 class="serif">Sree Kudumbakshethram</h2>
-                        <span id="receipt-date">Date: --/--/----</span>
-                    </div>
-                    <div class="vazhipad-grid">
-                        <div class="vazhipad-form">
-                            <input type="text" id="vazhipad-house" placeholder="House Name (Veetu Per)">
-                            <div id="devotees-list">
-                                <div class="devotee-entry">
-                                    <input type="text" class="devotee-name" placeholder="Devotee Name">
-                                    <select class="devotee-star">
-                                        <option value="" disabled selected>Select Nakshathram (Star)</option>
-                                        <option>Ashwini (അശ്വിനി)</option>
-                                        <option>Bharani (ഭരണി)</option>
-                                        <option>Krittika (കൃത്തിക)</option>
-                                        <option>Rohini (രോഹിണി)</option>
-                                        <option>Mrigashirsha (മൃഗശിര)</option>
-                                        <option>Ardra (ആർദ്ര)</option>
-                                        <option>Punarvasu (പുണർതം)</option>
-                                        <option>Pushya (പുണർതം)</option>
-                                        <option>Ashlesha (ആയില്യം)</option>
-                                        <option>Magha (മകം)</option>
-                                        <option>Purva Phalguni (പൂരം)</option>
-                                        <option>Uttara Phalguni (ഉത്രം)</option>
-                                        <option>Hasta (അത്തം)</option>
-                                        <option>Chitra (ചിത്തിര)</option>
-                                        <option>Swati (ചോതി)</option>
-                                        <option>Vishakha (വിശാഖം)</option>
-                                        <option>Anuradha (അനിഴം)</option>
-                                        <option>Jyeshtha (തൃക്കേട്ട)</option>
-                                        <option>Mula (മൂലം)</option>
-                                        <option>Purvashada (പൂരാടം)</option>
-                                        <option>Uttarashada (ഉത്രാടം)</option>
-                                        <option>Shravana (തിരുവോണം)</option>
-                                        <option>Dhanishta (അവിട്ടം)</option>
-                                        <option>Shatabhisha (ചതയം)</option>
-                                        <option>Purva Bhadrapada (പൂരുരുട്ടാതി)</option>
-                                        <option>Uttara Bhadrapada (ഉത്രട്ടാതി)</option>
-                                        <option>Revati (രേവതി)</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <button id="add-devotee-btn" type="button" class="add-btn">+ Add Family Member</button>
-                        </div>
-                        <div class="vazhipad-selector">
-                            <h3>Choose Vazhipad</h3>
-                            <div class="v-item">
-                                <span>Pushpanjali</span>
-                                <div class="v-right">
-                                    <span class="price">₹50</span>
-                                    <label class="switch">
-                                        <input type="checkbox" data-price="50">
-                                        <span class="slider"></span>
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="v-item">
-                                <span>Bhagyasooktham</span>
-                                <div class="v-right">
-                                    <span class="price">₹150</span>
-                                    <label class="switch">
-                                        <input type="checkbox" data-price="150">
-                                        <span class="slider"></span>
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="v-total">
-                                <span>Total Amount:</span>
-                                <span id="total-price">₹0</span>
-                            </div>
-                        </div>
-                    </div>
-                    <button class="book-btn w-100" id="go-payment-btn">Pay & Book Now</button>
-                </div>
-
-                <!-- Step 5: Payment -->
-                <div id="step-payment" class="booking-step">
-                    <h2 class="serif glow-text">Payment Method</h2>
-                    <div class="payment-options">
-                        <div class="pay-item" data-pay="upi">
-                            <span class="pay-icon">📱</span>
-                            <span>UPI (GPay / PhonePe)</span>
-                        </div>
-                        <div class="pay-item" data-pay="card">
-                            <span class="pay-icon">💳</span>
-                            <span>Credit / Debit Card</span>
-                        </div>
-                        <div class="pay-item" data-pay="netbanking">
-                            <span class="pay-icon">🏦</span>
-                            <span>Online Banking</span>
-                        </div>
-                    </div>
-                    <button class="book-btn w-100" id="confirm-booking-btn">Complete Payment</button>
-                </div>
-            </div>
+          </div>
         </div>
+      </div>
+
+      <!-- Slide 2: Kizhakke Pilla Veedu -->
+      <div class="hero-slide" data-slide="1">
+        <div class="hero-slide-2">
+          <div class="hero-slide-2-text">
+            <span class="eyebrow-light" data-i18n="slide2.eyebrow">Family Heritage</span>
+            <h1>
+              <span data-i18n="slide2.title.1">Kizhakke</span>
+              <span class="highlight" data-i18n="slide2.title.2">Pilla Veedu</span>
+            </h1>
+            <p class="lead" data-i18n="slide2.sub">
+              The ancestral home of our family lineage — where tradition, devotion and generations come together.
+            </p>
+            <div class="hero-actions">
+              <a href="#history" class="btn btn-primary" data-i18n="history.read.more">Read More</a>
+            </div>
+          </div>
+          <div class="hero-slide-2-image">
+            <img src="image/family-veedu.jpeg" alt="Kizhakke Pilla Veedu" />
+          </div>
+        </div>
+      </div>
+
     </div>
 
-    <!-- Modal for Family Details -->
-    <div class="modal" id="family-modal">
-        <div class="modal-content">
-            <div class="modal-border">
-                <span class="modal-close">&times;</span>
-                <img src="" alt="Branch Image" id="modal-img">
-                <h2 class="serif glow-text" id="modal-name">Family Name</h2>
-                <div class="modal-divider"></div>
-                <p id="modal-desc">Family Description goes here...</p>
-            </div>
-        </div>
+    <div class="hero-dots">
+      <button class="hero-dot active" data-go="0" aria-label="Slide 1"></button>
+      <button class="hero-dot" data-go="1" aria-label="Slide 2"></button>
     </div>
+  </section>
 
-    <script src="https://www.youtube.com/iframe_api"></script>
-    <script src="script.js"></script>
+  <!-- Quick Info Card (Timings · Festival · Location) -->
+  <div class="quick-info-wrap">
+    <div class="quick-info">
+      <div class="qi-cell">
+        <div class="qi-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="9" />
+            <path d="M12 7v5l3 2" stroke-linecap="round" />
+          </svg>
+        </div>
+        <div class="qi-text">
+          <span class="qi-label" data-i18n="qi.timings.label">Temple Timings</span>
+          <span class="qi-value" id="qi-timings" data-i18n="qi.timings.value">5:30 AM – 9:00 AM · 5:30 PM – 7:30
+            PM</span>
+        </div>
+      </div>
+      <div class="qi-cell">
+        <div class="qi-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="5" width="18" height="16" rx="2" />
+            <path d="M3 10h18M8 3v4M16 3v4" stroke-linecap="round" />
+          </svg>
+        </div>
+        <div class="qi-text">
+          <span class="qi-label" data-i18n="qi.festival.label">Upcoming Festival</span>
+          <span class="qi-value" id="qi-festival">—</span>
+        </div>
+      </div>
+      <div class="qi-cell">
+        <div class="qi-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 21s-7-7.5-7-12a7 7 0 1 1 14 0c0 4.5-7 12-7 12z" />
+            <circle cx="12" cy="9" r="2.5" />
+          </svg>
+        </div>
+        <div class="qi-text">
+          <span class="qi-label" data-i18n="qi.location.label">Location</span>
+          <span class="qi-value" data-i18n="qi.location.value">Kizhakke Pilla Veedu, Plamthanikkode</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Introduction -->
+  <section class="section" id="introduction">
+    <div class="container">
+      <div class="intro-grid">
+        <div class="intro-image">
+          <img src="assets/deity_main.jpg" alt="Sree Bhagavathi" />
+          <div class="intro-image-frame"></div>
+        </div>
+        <div class="intro-text">
+          <span class="section-eyebrow" data-i18n="intro.eyebrow">Introduction</span>
+          <p data-i18n="intro.body.1"></p>
+          <p data-i18n="intro.body.2"></p>
+          <p data-i18n="intro.body.3"></p>
+          <div class="intro-closing" data-i18n="intro.closing">With humble respect,</div>
+          <div class="intro-signature">
+            <strong data-i18n="intro.signed.name">Balachandran Nair (Babu)</strong>
+            <span data-i18n="intro.signed.line.1">Geethanjali</span><br />
+            <span data-i18n="intro.signed.line.2">Ponganadu</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Dedication -->
+  <section class="section section-alt" id="dedication">
+    <div class="container">
+      <div class="dedication-grid">
+        <div class="intro-text">
+          <span class="section-eyebrow" data-i18n="dedication.eyebrow">Dedication</span>
+          <p data-i18n="dedication.body.1"></p>
+          <p data-i18n="dedication.body.2"></p>
+          <p data-i18n="dedication.body.3"></p>
+          <p data-i18n="dedication.body.4"></p>
+          <div class="intro-signature">
+            <strong data-i18n="dedication.signed.name">G.P. Ravindran Nair</strong>
+            <span data-i18n="dedication.signed.line.1">Family Karanavar</span><br />
+            <span data-i18n="dedication.signed.line.2">Kizhakke Pilla Veedu</span><br />
+            <span data-i18n="dedication.signed.line.3">Pullanikode, Edava P.O., Varkala</span>
+          </div>
+        </div>
+        <div class="intro-image">
+          <img src="assets/deity_front.png" alt="Kizhakke Pilla Veedu Temple" />
+          <div class="intro-image-frame"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Family History -->
+  <section class="section" id="history">
+    <div class="container">
+      <div class="dedication-grid">
+        <div class="intro-text">
+          <span class="section-eyebrow" data-i18n="history.title">Family History — Summary</span>
+          <p data-i18n="history.body.1"></p>
+          <p data-i18n="history.body.2"></p>
+          <div style="margin-top: 20px;">
+            <button class="btn btn-primary" id="history-read-more" data-i18n="history.read.more">Read More</button>
+          </div>
+        </div>
+        <div class="intro-image">
+          <img src="image/family-veedu.jpeg" alt="Kizhakke Pilla Veedu" />
+          <div class="intro-image-frame"></div>
+        </div>
+      </div>
+
+      <!-- Family Tree -->
+      <div class="family-tree-wrap">
+        <div class="family-tree-title-wrap">
+          <h3 class="family-tree-title" data-i18n="tree.title">Kizhakke Pilla Veedu — Family Tree</h3>
+        </div>
+        <div class="ftree">
+
+          <!-- Row 1: 2 cards (top ancestors, both empty) -->
+          <div class="ftree-row first">
+            <div class="ftree-row-inner">
+              <div class="ftree-card placeholder">
+                <div class="ftree-photo empty"><span data-i18n="tree.noimage">No Image</span></div>
+                <span class="dash">—</span>
+              </div>
+              <div class="ftree-card placeholder">
+                <div class="ftree-photo empty"><span data-i18n="tree.noimage">No Image</span></div>
+                <span class="dash">—</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Row 2: 4 cards — 1st: Gouri Amma, 3rd: Parvathy Amma -->
+          <div class="ftree-row">
+            <div class="ftree-row-inner">
+              <div class="ftree-card">
+                <div class="ftree-photo empty"><span data-i18n="tree.noimage">No Image</span></div>
+                <span class="ftree-name" data-i18n="tree.gouri">Gouri Amma</span>
+              </div>
+              <div class="ftree-card placeholder">
+                <div class="ftree-photo empty"><span data-i18n="tree.noimage">No Image</span></div>
+                <span class="dash">—</span>
+              </div>
+              <div class="ftree-card">
+                <div class="ftree-photo empty"><span data-i18n="tree.noimage">No Image</span></div>
+                <span class="ftree-name" data-i18n="tree.parvathy">Parvathy Amma</span>
+              </div>
+              <div class="ftree-card placeholder">
+                <div class="ftree-photo empty"><span data-i18n="tree.noimage">No Image</span></div>
+                <span class="dash">—</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Row 3: 8 cards (named individuals like the screenshot) -->
+          <div class="ftree-row">
+            <div class="ftree-row-inner">
+              <div class="ftree-card">
+                <div class="ftree-photo empty"><span data-i18n="tree.noimage">No Image</span></div>
+                <span class="ftree-code">X1</span>
+                <span class="ftree-name" data-i18n="tree.x1.name">Narayana Pillai</span>
+                <span class="ftree-sub" data-i18n="tree.x1.note">(Kottarakara)</span>
+              </div>
+              <div class="ftree-card">
+                <div class="ftree-photo empty"><span data-i18n="tree.noimage">No Image</span></div>
+                <span class="ftree-code">X2</span>
+                <span class="ftree-name" data-i18n="tree.x2.name">Parameswaran Pillai</span>
+              </div>
+              <div class="ftree-card">
+                <div class="ftree-photo empty"><span data-i18n="tree.noimage">No Image</span></div>
+                <span class="ftree-code">X3</span>
+                <span class="ftree-name" data-i18n="tree.x3.name">Kartyani Amma</span>
+                <span class="ftree-sub" data-i18n="tree.x3.note">(Ponnu Amma)</span>
+              </div>
+              <div class="ftree-card">
+                <div class="ftree-photo empty"><span data-i18n="tree.noimage">No Image</span></div>
+                <span class="ftree-code">X4</span>
+                <span class="ftree-name" data-i18n="tree.x4.name">Gopala Pillai</span>
+              </div>
+              <div class="ftree-card">
+                <div class="ftree-photo empty"><span data-i18n="tree.noimage">No Image</span></div>
+                <span class="ftree-code">Y</span>
+                <span class="ftree-name" data-i18n="tree.y.name">Chellamma Amma</span>
+                <span class="ftree-sub" data-i18n="tree.y.sub">Ponnu Amma's mother's sister's daughter</span>
+              </div>
+              <div class="ftree-card">
+                <div class="ftree-photo empty"><span data-i18n="tree.noimage">No Image</span></div>
+                <span class="ftree-code">Z</span>
+                <span class="ftree-name" data-i18n="tree.z.name">Parvathi Pillai</span>
+              </div>
+              <div class="ftree-card placeholder">
+                <div class="ftree-photo empty"><span data-i18n="tree.noimage">No Image</span></div>
+                <span class="ftree-sub" data-i18n="tree.escaped">Other group escaped from Kazhakuttathu Pilla Veedu</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Description below the tree -->
+          <div class="ftree-note">
+            <p data-i18n="tree.note.body"></p>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Family History Full Modal -->
+  <div class="modal-backdrop" id="history-modal">
+    <div class="modal modal-lg">
+      <div class="modal-head">
+        <h3 class="modal-title" data-i18n="history.modal.title">Family History — Full Account</h3>
+        <button class="modal-close" data-close aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+            <path d="M6 6l12 12M6 18L18 6" stroke-linecap="round" />
+          </svg>
+        </button>
+      </div>
+      <div class="history-modal-content">
+        <h3 data-i18n="history.full.ch1.title">ചരിത്രം — 1</h3>
+        <p data-i18n="history.full.ch1.p1"></p>
+        <p data-i18n="history.full.ch1.p2"></p>
+
+        <h3 data-i18n="history.full.ch2.title">ചരിത്രം — 2</h3>
+        <p data-i18n="history.full.ch2.p1"></p>
+        <p data-i18n="history.full.ch2.p2"></p>
+        <p data-i18n="history.full.ch2.p3"></p>
+
+        <h3 data-i18n="history.full.ch3.title">ചരിത്രം — 3</h3>
+        <p data-i18n="history.full.ch3.p1"></p>
+        <p data-i18n="history.full.ch3.p2"></p>
+
+        <h3 data-i18n="history.full.ch4.title">ചരിത്രം — 4</h3>
+        <p data-i18n="history.full.ch4.p1"></p>
+        <p data-i18n="history.full.ch4.p2"></p>
+
+        <h3 data-i18n="history.full.ch5.title">ചരിത്രം — 5</h3>
+        <p data-i18n="history.full.ch5.p1"></p>
+        <p data-i18n="history.full.ch5.p2"></p>
+
+        <div class="signature-block">
+          <p style="font-style:italic;margin-bottom:8px;" data-i18n="history.full.note"></p>
+          <strong data-i18n="history.full.signed.name">എം. സുനിൽ</strong>
+          <span data-i18n="history.full.signed.line.1">രാമപുരം, വെസ്റ്റ് നട</span><br />
+          <span data-i18n="history.full.signed.line.2">തിരുവനന്തപുരം</span><br />
+          <span data-i18n="history.full.signed.line.3">9526229426</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Festivals -->
+  <section class="section section-alt" id="festivals">
+    <div class="container">
+      <div class="section-head">
+        <span class="section-eyebrow" data-i18n="nav.festivals">Festivals & Pujas</span>
+        <h2 class="section-title" data-i18n="festivals.title">Festivals & Pujas</h2>
+        <div class="section-divider">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2l1.6 6.4L20 10l-6.4 1.6L12 18l-1.6-6.4L4 10l6.4-1.6z" />
+          </svg>
+        </div>
+        <p class="section-lead" data-i18n="festivals.sub">A year-round calendar of sacred celebrations.</p>
+      </div>
+      <div id="festival-grid" class="grid grid-3"></div>
+    </div>
+  </section>
+
+  <!-- Timings -->
+  <section class="section" id="timings">
+    <div class="container" style="max-width:880px;">
+      <div class="section-head">
+        <span class="section-eyebrow" data-i18n="nav.timings">Temple Timings</span>
+        <h2 class="section-title" data-i18n="timings.title">Temple Timings</h2>
+        <div class="section-divider">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2l1.6 6.4L20 10l-6.4 1.6L12 18l-1.6-6.4L4 10l6.4-1.6z" />
+          </svg>
+        </div>
+        <p class="section-lead" data-i18n="timings.sub">Plan your darshan with our weekly schedule.</p>
+      </div>
+      <div class="timings-wrap" id="timings-wrap"></div>
+    </div>
+  </section>
+
+  <div id="layout-footer"></div>
+
+  <script src="js/i18n.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/layout.js"></script>
+  <script src="js/main.js"></script>
+  <script>
+    const Home = {
+      icons: [
+        '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.6 6.4L20 10l-6.4 1.6L12 18l-1.6-6.4L4 10l6.4-1.6z"/></svg>',
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a4 4 0 0 0-4 4c0 2 2 4 4 8 2-4 4-6 4-8a4 4 0 0 0-4-4z"/><circle cx="12" cy="7" r="1.5" fill="currentColor"/></svg>',
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 2"/></svg>',
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 21l7-18 7 18M9 14h6"/></svg>'
+      ],
+
+      renderQuickInfo() {
+        const lang = I18N.current;
+        const fest = Store.getFestivals()[0];
+        const fEl = document.getElementById('qi-festival');
+        if (fest) {
+          const name = fest[`name_${lang}`] || fest.name_en;
+          const date = fest[`date_${lang}`] || fest.date_en;
+          fEl.textContent = date ? `${name} · ${date}` : name;
+        } else {
+          fEl.textContent = '—';
+        }
+      },
+
+      renderFestivals() {
+        const grid = document.getElementById('festival-grid');
+        const lang = I18N.current;
+        const list = Store.getFestivals();
+        if (!list.length) {
+          grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18"/></svg>
+            <p>${I18N.t('festivals.empty')}</p>
+          </div>`;
+          return;
+        }
+        grid.innerHTML = list.map((f, i) => `
+          <article class="festival-card">
+            <div class="festival-banner">
+              <span class="festival-date">${f[`date_${lang}`] || f.date_en || ''}</span>
+              ${this.icons[i % this.icons.length]}
+            </div>
+            <div class="festival-body">
+              <h3 class="festival-title">${f[`name_${lang}`] || f.name_en}</h3>
+              <p class="festival-desc">${f[`desc_${lang}`] || f.desc_en || ''}</p>
+            </div>
+          </article>
+        `).join('');
+      },
+
+      renderTimings() {
+        const wrap = document.getElementById('timings-wrap');
+        const list = Store.getTimings();
+        wrap.innerHTML = `
+          <div class="timings-row head">
+            <div data-i18n="timings.day">Day</div>
+            <div data-i18n="timings.morning">Morning</div>
+            <div data-i18n="timings.evening">Evening</div>
+          </div>
+          ${list.map(t => `
+            <div class="timings-row">
+              <div class="timings-day"><span class="dot"></span><span>${I18N.t('days.' + t.day)}</span></div>
+              <div class="timings-time ${t.morning ? '' : 'closed'}">${t.morning || '— Closed —'}</div>
+              <div class="timings-time ${t.evening ? '' : 'closed'}">${t.evening || '— Closed —'}</div>
+            </div>
+          `).join('')}
+        `;
+      },
+
+      renderAll() {
+        this.renderQuickInfo();
+        this.renderFestivals();
+        this.renderTimings();
+      },
+
+      bindHistoryModal() {
+        const btn = document.getElementById('history-read-more');
+        if (btn) btn.addEventListener('click', () => UI.openModal('history-modal'));
+      },
+
+      init() {
+        this.renderAll();
+        this.bindHistoryModal();
+        document.addEventListener('lang:change', () => this.renderAll());
+      }
+    };
+    document.addEventListener('DOMContentLoaded', () => Home.init());
+  </script>
 </body>
 
 </html>
