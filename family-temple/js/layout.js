@@ -74,11 +74,22 @@ const Layout = {
     `;
   },
 
+  scrollTopBtn() {
+    return `
+      <button class="scroll-top-btn" id="scroll-top-btn" aria-label="Scroll to top">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M5 15l7-7 7 7" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    `;
+  },
+
   mount() {
     const headerHost = document.getElementById('layout-header');
     const footerHost = document.getElementById('layout-footer');
     if (headerHost) headerHost.outerHTML = this.header();
     if (footerHost) footerHost.outerHTML = this.footer();
+    document.body.insertAdjacentHTML('beforeend', this.scrollTopBtn());
   }
 };
 

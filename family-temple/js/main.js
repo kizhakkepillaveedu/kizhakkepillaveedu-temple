@@ -12,11 +12,15 @@ const UI = {
     if (!header) return;
     const hero = document.querySelector('.hero');
     this.updateHeader = () => {
+      const isMobile = window.innerWidth <= 860;
       const onLight = !!document.querySelector('.hero-slide[data-slide="1"].active');
-      if (!hero || window.scrollY > 30 || onLight) header.classList.add('scrolled');
+      // On mobile, slide 2 puts the image on top — keep header transparent there
+      const forceSolid = onLight && !isMobile;
+      if (!hero || window.scrollY > 30 || forceSolid) header.classList.add('scrolled');
       else header.classList.remove('scrolled');
     };
     window.addEventListener('scroll', this.updateHeader, { passive: true });
+    window.addEventListener('resize', this.updateHeader, { passive: true });
     this.updateHeader();
   },
 
@@ -63,8 +67,8 @@ const UI = {
   },
 
   bindModalCloses() {
+    // Modals close ONLY via [data-close] (the X button / Cancel) or ESC — not backdrop click
     document.querySelectorAll('.modal-backdrop').forEach(bd => {
-      bd.addEventListener('click', e => { if (e.target === bd) bd.classList.remove('open'); });
       bd.querySelectorAll('[data-close]').forEach(btn => {
         btn.addEventListener('click', () => bd.classList.remove('open'));
       });
@@ -126,6 +130,48 @@ const HeroSlider = {
   }
 };
 
+/* ============== Scroll-to-top button ============== */
+function initScrollTop() {
+  const btn = document.getElementById('scroll-top-btn');
+  if (!btn) return;
+
+  const update = () => btn.classList.toggle('show', window.scrollY > 400);
+  window.addEventListener('scroll', update, { passive: true });
+  update();
+
+  btn.addEventListener('click', () => {
+    if (window.lenis && typeof window.lenis.scrollTo === 'function') {
+      window.lenis.scrollTo(0, { duration: 1.4 });
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  });
+}
+
+/* ============== Sticky hero — scale + fade based on scroll progress ============== */
+function initStickyHero() {
+  const hero = document.querySelector('.hero');
+  if (!hero) return;
+
+  let ticking = false;
+  const update = () => {
+    const heroH = hero.offsetHeight || window.innerHeight;
+    const scrolled = window.scrollY;
+    const progress = Math.max(0, Math.min(1, scrolled / heroH));
+    hero.style.setProperty('--hero-scroll', progress.toFixed(3));
+    ticking = false;
+  };
+
+  window.addEventListener('scroll', () => {
+    if (!ticking) {
+      requestAnimationFrame(update);
+      ticking = true;
+    }
+  }, { passive: true });
+
+  update();
+}
+
 /* ============== Smooth scrolling (Lenis) ============== */
 function initSmoothScroll() {
   if (typeof Lenis === 'undefined') return;
@@ -148,13 +194,14 @@ function initSmoothScroll() {
   window.lenis = lenis;
 }
 
-/* ============== Scroll-reveal (sections fade + de-blur + slide into view) ============== */
+/* ============== Scroll-reveal — content (text + images) fades, section bg stays solid ============== */
 function initScrollReveal() {
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-  // Default fade-up reveal for generic sections / cards
+  // Apply reveal to inner CONTENT only (not entire sections which have backgrounds).
+  // This way the section background stays solid and only text/images fade in.
   const fadeTargets = document.querySelectorAll(
-    '.section, .quick-info-wrap, .ftree-row, .ftree-note, .festival-card, .puja-card'
+    '.intro-text, .quick-info, .ftree-row, .ftree-note, .festival-card, .puja-card, .family-tree-wrap, .section-head'
   );
   fadeTargets.forEach(el => {
     if (!el.classList.contains('reveal-left') && !el.classList.contains('reveal-right')) {
@@ -162,7 +209,7 @@ function initScrollReveal() {
     }
   });
 
-  // Combined target list (reveal + reveal-left + reveal-right)
+  // Combined target list (reveal + reveal-left + reveal-right — image cards already use directional reveals via HTML)
   const allTargets = document.querySelectorAll('.reveal, .reveal-left, .reveal-right');
 
   const io = new IntersectionObserver((entries) => {
@@ -184,6 +231,8 @@ document.addEventListener('DOMContentLoaded', () => {
   UI.init();
   UI.bindModalCloses();
   HeroSlider.init();
+  initStickyHero();
   initSmoothScroll();
   initScrollReveal();
+  initScrollTop();
 });

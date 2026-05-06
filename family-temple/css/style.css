@@ -53,8 +53,8 @@ body {
   line-height: 1.6;
   min-height: 100vh;
   overflow-x: hidden;
-  /* Page entry animation: fade + de-blur */
-  animation: pageEnter 0.7s cubic-bezier(0.4, 0, 0.2, 1) both;
+  /* Page entry animation: fade + de-blur (no transform/filter at end — they create containing blocks that break position:fixed) */
+  animation: pageEnter 0.7s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 @keyframes pageEnter {
@@ -65,8 +65,7 @@ body {
   }
   to {
     opacity: 1;
-    filter: blur(0);
-    transform: scale(1);
+    /* filter & transform deliberately omitted so they revert to none → fixed/sticky descendants work correctly */
   }
 }
 
@@ -277,9 +276,11 @@ body.has-hero { padding-top: 0; }
 
 .menu-toggle svg { width: 24px; height: 24px; }
 
-/* ===================== Hero (Full-width 16:9 video banner) ===================== */
+/* ===================== Hero (Full-width 16:9 video banner, sticky scroll reveal) ===================== */
 .hero {
-  position: relative;
+  position: sticky;
+  top: 0;
+  z-index: 1;
   width: 100%;
   aspect-ratio: 16 / 9;
   min-height: 560px;
@@ -289,6 +290,26 @@ body.has-hero { padding-top: 0; }
   background: #0e0a14;
   padding: 0;
 }
+
+/* Scroll-driven scale + fade effect on hero contents */
+.hero-slides {
+  transform: scale(calc(1 - var(--hero-scroll, 0) * 0.06));
+  transform-origin: center;
+  filter: brightness(calc(1 - var(--hero-scroll, 0) * 0.4));
+  transition: none;
+  will-change: transform, filter;
+}
+
+/* Content below sits above the sticky hero so it covers it as user scrolls */
+body.has-hero .quick-info-wrap,
+body.has-hero .section,
+body.has-hero .site-footer {
+  position: relative;
+  z-index: 2;
+}
+
+body.has-hero .section { background: var(--color-bg); }
+body.has-hero .section.section-alt { background: var(--color-bg-alt); }
 
 .hero-bg {
   position: absolute;
@@ -471,14 +492,22 @@ body.has-hero { padding-top: 0; }
 @media (max-width: 860px) {
   .hero-slide-2 {
     grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr;
+    grid-template-rows: 1fr auto;
+  }
+  .hero-slide-2-image {
+    order: 1;
+    min-height: 40vh;
   }
   .hero-slide-2-text {
-    padding: 100px 24px 20px;
+    order: 2;
+    padding: 18px 24px 24px;
     text-align: center;
     align-items: center;
   }
   .hero-slide-2-image img { object-position: center; }
+  .hero-slide-2 h1 { margin-bottom: 14px; font-size: clamp(1.7rem, 7vw, 2.4rem); }
+  .hero-slide-2 .lead { margin-bottom: 16px; font-size: 0.95rem; }
+  .hero-slide-2 .eyebrow-light { margin-bottom: 14px; }
 }
 
 .hero-eyebrow {
@@ -556,13 +585,14 @@ body.has-hero { padding-top: 0; }
 @media (max-width: 720px) {
   .hero {
     aspect-ratio: auto;
-    min-height: 80vh;
+    min-height: 92vh;
   }
   .hero-bg::after {
     background:
-      linear-gradient(180deg, rgba(10, 8, 16, 0.3) 0%, rgba(10, 8, 16, 0.5) 50%, rgba(10, 8, 16, 0.85) 100%);
+      linear-gradient(180deg, rgba(10, 8, 16, 0.2) 0%, rgba(10, 8, 16, 0.45) 55%, rgba(10, 8, 16, 0.9) 100%);
   }
-  .hero-content { padding: 80px 0 60px; }
+  .hero-content { padding: 0; }
+  .hero-slide[data-slide="0"] > .container { padding-bottom: 90px; }
 }
 
 /* ===================== Quick Info Card ===================== */
@@ -774,14 +804,13 @@ body.has-hero { padding-top: 0; }
 
 .intro-image {
   position: relative;
+  align-self: start;
   border-radius: var(--radius-lg);
   overflow: hidden;
   box-shadow: var(--shadow-lg);
   aspect-ratio: 4 / 5;
   max-height: 70vh;
   background: var(--color-bg-alt);
-  position: sticky;
-  top: 100px;
 }
 
 .intro-image img {
@@ -863,7 +892,13 @@ body[data-lang="ml"] .intro-text p {
     grid-template-columns: 1fr;
     gap: 32px;
   }
-  .intro-image { max-width: 320px; margin: 0 auto; }
+  .intro-image {
+    max-width: 320px;
+    margin: 0 auto;
+    position: static;
+    top: auto;
+    align-self: auto;
+  }
   .intro-text { text-align: left; }
 }
 
@@ -1105,16 +1140,47 @@ body[data-lang="ml"] .ftree-note p {
   line-height: 2;
 }
 
-/* Large modal for long-form content */
-.modal-lg {
+/* Large modal for long-form content — uses .modal.modal-lg for higher specificity than .modal alone */
+.modal.modal-lg {
   max-width: 880px;
+  padding: 0;
+  max-height: 88vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.modal.modal-lg .modal-head {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--color-surface);
+  margin: 0;
+  padding: 22px 36px;
+  border-bottom: 1px solid var(--color-border);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+}
+
+.modal.modal-lg .modal-close {
+  background: var(--color-bg-alt);
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.modal.modal-lg .modal-close:hover {
+  background: var(--color-gold-soft);
+  color: var(--color-gold-deep);
 }
 
 .history-modal-content {
-  padding-right: 6px;
+  padding: 28px 36px 36px;
   font-size: 0.95rem;
   color: var(--color-text-soft);
   line-height: 1.85;
+}
+
+@media (max-width: 720px) {
+  .modal.modal-lg .modal-head { padding: 18px 22px; }
+  .history-modal-content { padding: 22px 22px 28px; }
 }
 
 .history-modal-content h3 {
@@ -1640,6 +1706,54 @@ body[data-lang="ml"] .history-modal-content p {
 .login-box h2 { margin-bottom: 8px; }
 .login-box .hint { color: var(--color-text-muted); font-size: 0.88rem; margin-bottom: 24px; }
 
+/* ===================== Scroll-to-top button ===================== */
+.scroll-top-btn {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-gold), var(--color-gold-deep));
+  color: #fff;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 8px 24px rgba(201, 162, 39, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+  cursor: pointer;
+  z-index: 95;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(20px) scale(0.9);
+  transition: opacity 0.3s, visibility 0.3s, transform 0.3s, box-shadow 0.25s;
+  border: none;
+  padding: 0;
+}
+
+.scroll-top-btn.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+}
+
+.scroll-top-btn:hover {
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 12px 32px rgba(201, 162, 39, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+}
+
+.scroll-top-btn:active { transform: translateY(0) scale(0.96); }
+
+.scroll-top-btn svg { width: 22px; height: 22px; }
+
+@media (max-width: 720px) {
+  .scroll-top-btn {
+    bottom: 20px;
+    right: 20px;
+    width: 44px;
+    height: 44px;
+  }
+  .scroll-top-btn svg { width: 18px; height: 18px; }
+}
+
 /* ===================== Toast ===================== */
 .toast {
   position: fixed;
@@ -1664,8 +1778,8 @@ body[data-lang="ml"] .history-modal-content p {
 .site-footer {
   background: linear-gradient(135deg, #1a1a2e, #2a2440);
   color: #d3cfb8;
-  padding: 60px 0 30px;
-  margin-top: 60px;
+  padding: 90px 0 30px;
+  margin-top: 0;
 }
 
 .footer-grid {
@@ -1721,10 +1835,22 @@ body[data-lang="ml"] .history-modal-content p {
     border-bottom: 1px solid var(--color-border);
     box-shadow: var(--shadow-md);
     transform: translateY(-120%);
-    transition: transform 0.3s;
+    opacity: 0;
+    visibility: hidden;
+    transition: transform 0.3s, opacity 0.3s, visibility 0.3s;
     z-index: 90;
   }
-  .nav.open { transform: translateY(0); }
+  .nav.open { transform: translateY(0); opacity: 1; visibility: visible; }
+  /* Force dark text in mobile menu regardless of header transparent state */
+  .site-header .nav .nav-link,
+  .site-header:not(.scrolled) .nav .nav-link { color: var(--color-text); }
+  .site-header .nav .nav-link:hover,
+  .site-header .nav .nav-link.active,
+  .site-header:not(.scrolled) .nav .nav-link:hover,
+  .site-header:not(.scrolled) .nav .nav-link.active {
+    color: var(--color-gold-deep);
+    background: var(--color-gold-soft);
+  }
   .nav-link { width: 100%; }
   .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
   .form-row.cols-2 { grid-template-columns: 1fr; }
