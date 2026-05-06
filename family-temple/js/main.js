@@ -126,9 +126,64 @@ const HeroSlider = {
   }
 };
 
+/* ============== Smooth scrolling (Lenis) ============== */
+function initSmoothScroll() {
+  if (typeof Lenis === 'undefined') return;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  const lenis = new Lenis({
+    duration: 1.1,
+    smoothWheel: true,
+    smoothTouch: false,
+    lerp: 0.1,
+    easing: t => Math.min(1, 1.001 - Math.pow(2, -10 * t))
+  });
+
+  function raf(time) {
+    lenis.raf(time);
+    requestAnimationFrame(raf);
+  }
+  requestAnimationFrame(raf);
+
+  window.lenis = lenis;
+}
+
+/* ============== Scroll-reveal (sections fade + de-blur + slide into view) ============== */
+function initScrollReveal() {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  // Default fade-up reveal for generic sections / cards
+  const fadeTargets = document.querySelectorAll(
+    '.section, .quick-info-wrap, .ftree-row, .ftree-note, .festival-card, .puja-card'
+  );
+  fadeTargets.forEach(el => {
+    if (!el.classList.contains('reveal-left') && !el.classList.contains('reveal-right')) {
+      el.classList.add('reveal');
+    }
+  });
+
+  // Combined target list (reveal + reveal-left + reveal-right)
+  const allTargets = document.querySelectorAll('.reveal, .reveal-left, .reveal-right');
+
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('in-view');
+      } else {
+        // Re-trigger: remove when fully out of view so animation plays again on return
+        entry.target.classList.remove('in-view');
+      }
+    });
+  }, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
+
+  allTargets.forEach(el => io.observe(el));
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   I18N.init();
   UI.init();
   UI.bindModalCloses();
   HeroSlider.init();
+  initSmoothScroll();
+  initScrollReveal();
 });

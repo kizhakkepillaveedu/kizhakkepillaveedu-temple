@@ -11,6 +11,7 @@
     href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&family=Noto+Sans+Malayalam:wght@400;500;600;700&family=Noto+Serif+Malayalam:wght@500;600;700&display=swap"
     rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
+  <script src="https://unpkg.com/lenis@1.1.20/dist/lenis.min.js" defer></script>
 </head>
 
 <body data-lang="ml" class="has-hero">
@@ -121,7 +122,7 @@
   <section class="section" id="introduction">
     <div class="container">
       <div class="intro-grid">
-        <div class="intro-image">
+        <div class="intro-image reveal-left">
           <img src="assets/deity_main.jpg" alt="Sree Bhagavathi" />
           <div class="intro-image-frame"></div>
         </div>
@@ -158,7 +159,7 @@
             <span data-i18n="dedication.signed.line.3">Pullanikode, Edava P.O., Varkala</span>
           </div>
         </div>
-        <div class="intro-image">
+        <div class="intro-image reveal-right">
           <img src="assets/deity_front.png" alt="Kizhakke Pilla Veedu Temple" />
           <div class="intro-image-frame"></div>
         </div>
@@ -169,7 +170,11 @@
   <!-- Family History -->
   <section class="section" id="history">
     <div class="container">
-      <div class="dedication-grid">
+      <div class="intro-grid">
+        <div class="intro-image reveal-left">
+          <img src="image/family-veedu.jpeg" alt="Kizhakke Pilla Veedu" />
+          <div class="intro-image-frame"></div>
+        </div>
         <div class="intro-text">
           <span class="section-eyebrow" data-i18n="history.title">Family History — Summary</span>
           <p data-i18n="history.body.1"></p>
@@ -177,10 +182,6 @@
           <div style="margin-top: 20px;">
             <button class="btn btn-primary" id="history-read-more" data-i18n="history.read.more">Read More</button>
           </div>
-        </div>
-        <div class="intro-image">
-          <img src="image/family-veedu.jpeg" alt="Kizhakke Pilla Veedu" />
-          <div class="intro-image-frame"></div>
         </div>
       </div>
 
