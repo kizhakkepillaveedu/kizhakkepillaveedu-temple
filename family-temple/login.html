@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ml">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login · Kizhakke Pilla Veedu</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&family=Noto+Sans+Malayalam:wght@400;500;600;700&family=Noto+Serif+Malayalam:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body data-lang="ml">
+  <div id="layout-header"></div>
+
+  <section class="container">
+    <div class="auth-card">
+      <div class="auth-logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28">
+          <path d="M12 12c2.5 0 4.5-2 4.5-4.5S14.5 3 12 3 7.5 5 7.5 7.5 9.5 12 12 12z"/>
+          <path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/>
+        </svg>
+      </div>
+      <h2 data-i18n="auth.title">Welcome to the Temple</h2>
+      <p class="hint" data-i18n="auth.sub">Sign in or create an account to book vazhipadu.</p>
+
+      <div class="auth-tabs">
+        <button class="auth-tab active" data-tab="login" data-i18n="auth.tab.login">Login</button>
+        <button class="auth-tab" data-tab="signup" data-i18n="auth.tab.signup">Sign Up</button>
+      </div>
+
+      <form id="login-form" class="auth-form" autocomplete="on" novalidate>
+        <div class="form-field">
+          <label data-i18n="auth.email">Email</label>
+          <input type="email" name="email" autocomplete="email" maxlength="120" required />
+        </div>
+        <div class="form-field">
+          <label data-i18n="auth.password">Password</label>
+          <input type="password" name="password" autocomplete="current-password" maxlength="128" required />
+        </div>
+        <button type="submit" class="btn btn-primary btn-block" data-i18n="auth.tab.login">Login</button>
+        <p class="auth-error" id="login-err" data-i18n="auth.err.invalid">Invalid email or password.</p>
+      </form>
+
+      <form id="signup-form" class="auth-form hidden" autocomplete="on" novalidate>
+        <div class="form-field">
+          <label data-i18n="auth.fullname">Full Name</label>
+          <input type="text" name="name" autocomplete="name" maxlength="80" required />
+        </div>
+        <div class="form-field">
+          <label data-i18n="auth.email">Email</label>
+          <input type="email" name="email" autocomplete="email" maxlength="120" required />
+        </div>
+        <div class="form-field">
+          <label data-i18n="auth.phone">Phone</label>
+          <input type="tel" name="phone" autocomplete="tel" maxlength="20" inputmode="tel" />
+        </div>
+        <div class="form-field">
+          <label data-i18n="auth.password">Password</label>
+          <input type="password" name="password" autocomplete="new-password" minlength="6" maxlength="128" required />
+        </div>
+        <button type="submit" class="btn btn-primary btn-block" data-i18n="auth.tab.signup">Sign Up</button>
+        <p class="auth-error" id="signup-err" data-i18n="auth.err.exists">An account with this email already exists.</p>
+      </form>
+    </div>
+  </section>
+
+  <div id="layout-footer"></div>
+
+  <script src="js/i18n.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/layout.js"></script>
+  <script src="js/main.js"></script>
+  <script>
+    (function () {
+      const params = new URLSearchParams(location.search);
+      const safeNext = (val) => {
+        const allowed = ['vazhipadu.html', 'index.html', 'admin.html'];
+        return allowed.includes(val) ? val : null;
+      };
+      const requestedNext = safeNext(params.get('next'));
+
+      const destination = (user) => {
+        if (user && user.isAdmin) return 'admin.html';
+        return requestedNext || 'vazhipadu.html';
+      };
+
+      // If already logged in, send to appropriate destination
+      const existing = Store.getCurrentUser();
+      if (existing) {
+        window.location.href = destination(existing);
+        return;
+      }
+
+      const tabs = document.querySelectorAll('.auth-tab');
+      const loginForm = document.getElementById('login-form');
+      const signupForm = document.getElementById('signup-form');
+
+      tabs.forEach(t => t.addEventListener('click', () => {
+        tabs.forEach(x => x.classList.toggle('active', x === t));
+        const isLogin = t.dataset.tab === 'login';
+        loginForm.classList.toggle('hidden', !isLogin);
+        signupForm.classList.toggle('hidden', isLogin);
+        document.getElementById('login-err').style.display = 'none';
+        document.getElementById('signup-err').style.display = 'none';
+      }));
+
+      const showError = (id, key, params) => {
+        const el = document.getElementById(id);
+        let msg = I18N.t(key);
+        if (params) Object.keys(params).forEach(k => { msg = msg.replace(`{${k}}`, params[k]); });
+        el.textContent = msg;
+        el.style.display = 'block';
+      };
+
+      loginForm.addEventListener('submit', async e => {
+        e.preventDefault();
+        const submitBtn = loginForm.querySelector('button[type="submit"]');
+        submitBtn.disabled = true;
+        try {
+          const fd = new FormData(loginForm);
+          const r = await Store.loginUser(fd.get('email'), fd.get('password'));
+          if (!r.ok) {
+            if (r.error === 'locked') {
+              showError('login-err', 'auth.err.locked', { secs: r.retryInSeconds });
+            } else {
+              showError('login-err', 'auth.err.invalid');
+            }
+            return;
+          }
+          window.location.href = destination(r.user);
+        } catch (err) {
+          showError('login-err', 'auth.err.invalid');
+        } finally {
+          submitBtn.disabled = false;
+        }
+      });
+
+      signupForm.addEventListener('submit', async e => {
+        e.preventDefault();
+        const submitBtn = signupForm.querySelector('button[type="submit"]');
+        submitBtn.disabled = true;
+        try {
+          const fd = new FormData(signupForm);
+          const r = await Store.signupUser({
+            name: fd.get('name'),
+            email: fd.get('email'),
+            phone: fd.get('phone'),
+            password: fd.get('password')
+          });
+          if (!r.ok) {
+            const errKey = ({
+              missing: 'auth.err.missing',
+              badEmail: 'auth.err.badEmail',
+              badPhone: 'auth.err.badPhone',
+              weakPassword: 'auth.err.weakPassword',
+              exists: 'auth.err.exists'
+            })[r.error] || 'auth.err.exists';
+            showError('signup-err', errKey);
+            return;
+          }
+          window.location.href = destination(r.user);
+        } catch (err) {
+          showError('signup-err', 'auth.err.exists');
+        } finally {
+          submitBtn.disabled = false;
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

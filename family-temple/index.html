@@ -24,7 +24,7 @@
       <!-- Slide 1: Devi Video -->
       <div class="hero-slide active" data-slide="0">
         <div class="hero-bg">
-          <video src="image/devi.mp4" autoplay muted playsinline preload="auto"></video>
+          <video src="image/devi.mp4" poster="assets/deity_main.jpg" autoplay muted playsinline preload="auto"></video>
         </div>
         <div class="container">
           <div class="hero-content">
@@ -237,12 +237,12 @@
                 <span class="ftree-name" data-i18n="tree.x1.name">Narayana Pillai</span>
                 <span class="ftree-sub" data-i18n="tree.x1.note">(Kottarakara)</span>
               </div>
-              <div class="ftree-card">
+              <div class="ftree-card clickable" id="x2-card" role="button" tabindex="0" aria-label="Open Parameswaran Pillai family">
                 <div class="ftree-photo empty"><span data-i18n="tree.noimage">No Image</span></div>
                 <span class="ftree-code">X2</span>
                 <span class="ftree-name" data-i18n="tree.x2.name">Parameswaran Pillai</span>
               </div>
-              <div class="ftree-card">
+              <div class="ftree-card clickable" id="x3-card" role="button" tabindex="0" aria-label="Open Ponnu Amma family">
                 <div class="ftree-photo empty"><span data-i18n="tree.noimage">No Image</span></div>
                 <span class="ftree-code">X3</span>
                 <span class="ftree-name" data-i18n="tree.x3.name">Kartyani Amma</span>
@@ -253,20 +253,21 @@
                 <span class="ftree-code">X4</span>
                 <span class="ftree-name" data-i18n="tree.x4.name">Gopala Pillai</span>
               </div>
-              <div class="ftree-card">
+              <div class="ftree-card clickable" id="y-card" role="button" tabindex="0" aria-label="Open Chellamma Amma family">
                 <div class="ftree-photo empty"><span data-i18n="tree.noimage">No Image</span></div>
                 <span class="ftree-code">Y</span>
                 <span class="ftree-name" data-i18n="tree.y.name">Chellamma Amma</span>
                 <span class="ftree-sub" data-i18n="tree.y.sub">Ponnu Amma's mother's sister's daughter</span>
               </div>
-              <div class="ftree-card">
+              <div class="ftree-card clickable" id="z-card" role="button" tabindex="0" aria-label="Open Parvathi Pillai family">
                 <div class="ftree-photo empty"><span data-i18n="tree.noimage">No Image</span></div>
                 <span class="ftree-code">Z</span>
                 <span class="ftree-name" data-i18n="tree.z.name">Parvathi Pillai</span>
               </div>
               <div class="ftree-card placeholder">
                 <div class="ftree-photo empty"><span data-i18n="tree.noimage">No Image</span></div>
-                <span class="ftree-sub" data-i18n="tree.escaped">Other group escaped from Kazhakuttathu Pilla Veedu</span>
+                <span class="ftree-sub" data-i18n="tree.escaped">Other group escaped from Kazhakuttathu Pilla
+                  Veedu</span>
               </div>
             </div>
           </div>
@@ -359,6 +360,365 @@
     </div>
   </section>
 
+  <!-- Contact -->
+  <section class="section section-alt" id="contact">
+    <div class="container">
+      <div class="section-head">
+        <span class="section-eyebrow" data-i18n="contact.eyebrow">Contact</span>
+        <h2 class="section-title" data-i18n="contact.title">Get in Touch</h2>
+        <div class="section-divider">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2l1.6 6.4L20 10l-6.4 1.6L12 18l-1.6-6.4L4 10l6.4-1.6z" />
+          </svg>
+        </div>
+        <p class="section-lead" data-i18n="contact.sub">Reach out for blessings, bookings, or any queries.</p>
+      </div>
+
+      <div class="contact-grid">
+        <!-- Left: Enquiry Form -->
+        <div class="contact-form-card">
+          <div class="contact-form-head">
+            <div class="contact-form-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><path d="M4 6h16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z"/><path d="M2 8l10 7 10-7"/></svg>
+            </div>
+            <h3 data-i18n="contact.form.title">Send us an Enquiry</h3>
+          </div>
+          <form id="contact-form" novalidate>
+            <div class="form-row cols-2">
+              <div class="form-field">
+                <label data-i18n="contact.field.name">Full Name</label>
+                <input type="text" name="name" maxlength="80" autocomplete="name" data-i18n-placeholder="contact.field.name.ph" placeholder="Devotee Name" required />
+              </div>
+              <div class="form-field">
+                <label data-i18n="contact.field.email">Email Address</label>
+                <input type="email" name="email" maxlength="120" autocomplete="email" data-i18n-placeholder="contact.field.email.ph" placeholder="you@example.com" required />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-field">
+                <label data-i18n="contact.field.subject">Subject</label>
+                <select name="subject">
+                  <option value="general" data-i18n="contact.subject.general">General Enquiry</option>
+                  <option value="booking" data-i18n="contact.subject.booking">Vazhipadu Booking</option>
+                  <option value="festival" data-i18n="contact.subject.festival">Festival Information</option>
+                  <option value="visit" data-i18n="contact.subject.visit">Planning a Visit</option>
+                  <option value="other" data-i18n="contact.subject.other">Other</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-field">
+                <label data-i18n="contact.field.message">Your Message</label>
+                <textarea name="message" rows="5" maxlength="1000" data-i18n-placeholder="contact.field.message.ph" placeholder="How can we help you today?" required></textarea>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary contact-submit">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span data-i18n="contact.send">Send Enquiry</span>
+            </button>
+            <p class="contact-form-note" data-i18n="contact.form.note">We usually respond within 24 hours.</p>
+          </form>
+        </div>
+
+        <!-- Right: Temple Info + Map -->
+        <div class="contact-side">
+          <aside class="contact-info-card">
+            <h3 data-i18n="contact.info.title">Temple Contact</h3>
+            <div class="info-row">
+              <div class="info-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M12 21s-7-7.5-7-12a7 7 0 1 1 14 0c0 4.5-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></svg>
+              </div>
+              <div>
+                <strong data-i18n="contact.info.visit">Visit Us</strong>
+                <span data-i18n="contact.info.visit.value">Kizhakke Pilla Veedu Sree Bhagavathi Temple, Plamthanikkode, Edava P.O., Varkala, Kerala – 695311</span>
+              </div>
+            </div>
+            <div class="info-row">
+              <div class="info-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+              </div>
+              <div>
+                <strong data-i18n="contact.info.call">Call Us</strong>
+                <span data-i18n="contact.info.call.value">+91 00000 00000</span>
+              </div>
+            </div>
+            <div class="info-row">
+              <div class="info-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2" stroke-linecap="round"/></svg>
+              </div>
+              <div>
+                <strong data-i18n="contact.info.timings">Darshan Timings</strong>
+                <span data-i18n="contact.info.timings.morning">Morning: 5:30 AM – 9:00 AM</span>
+                <span data-i18n="contact.info.timings.evening">Evening: 5:30 PM – 7:30 PM</span>
+              </div>
+            </div>
+          </aside>
+
+          <div class="contact-map">
+            <iframe
+              src="https://maps.google.com/maps?q=Kizhakke%20Pilla%20Veedu%20Plamthanikkode%20Edava%20Varkala%20Kerala&output=embed"
+              loading="lazy"
+              referrerpolicy="no-referrer-when-downgrade"
+              title="Kizhakke Pilla Veedu Temple Location"></iframe>
+            <a class="map-link-btn" href="https://maps.app.goo.gl/bHZ4VcxovZj7fh9j6" target="_blank" rel="noopener noreferrer">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M12 21s-7-7.5-7-12a7 7 0 1 1 14 0c0 4.5-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></svg>
+              <span data-i18n="contact.map.btn">View on Google Maps</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- X3 Ponnu Amma Sub-tree Modal -->
+  <div class="modal-backdrop" id="x3-modal">
+    <div class="modal modal-lg">
+      <div class="modal-head">
+        <h3 class="modal-title" data-i18n="sub.x3.title">X3 Ponnu Amma — Family</h3>
+        <button class="modal-close" data-close aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M6 6l12 12M6 18L18 6" stroke-linecap="round" /></svg>
+        </button>
+      </div>
+      <div class="history-modal-content">
+        <div class="subtree">
+          <!-- Ancestor placeholders (parents of the couple) -->
+          <div class="subtree-couple" style="margin-bottom:18px;">
+            <div class="ftree-card placeholder">
+              <div class="ftree-photo empty"><span data-i18n="tree.noimage">No Image</span></div>
+              <span class="dash">—</span>
+            </div>
+            <div class="ftree-card placeholder">
+              <div class="ftree-photo empty"><span data-i18n="tree.noimage">No Image</span></div>
+              <span class="dash">—</span>
+            </div>
+          </div>
+          <!-- Couple: 1 Ponnu Amma + Neelakanda Pillai Parvarthiyar -->
+          <div class="subtree-couple">
+            <div class="ftree-card">
+              <div class="ftree-photo empty"><span data-i18n="tree.noimage">No Image</span></div>
+              <span class="ftree-code" data-i18n="sub.x3.head.code">1</span>
+              <span class="ftree-name" data-i18n="sub.x3.head.name">Ponnu Amma</span>
+            </div>
+            <div class="ftree-card">
+              <div class="ftree-photo empty"><span data-i18n="tree.noimage">No Image</span></div>
+              <span class="ftree-name" data-i18n="sub.x3.spouse.name">Neelakanda Pillai Parvarthiyar</span>
+              <span class="ftree-sub" data-i18n="sub.x3.spouse.role">(Village Officer)</span>
+            </div>
+          </div>
+
+          <div class="subtree-children-label" data-i18n="sub.x3.children.label">Children</div>
+
+          <!-- 10 children grid -->
+          <div class="subtree-grid">
+            <div class="ftree-card">
+              <div class="ftree-photo empty"><span data-i18n="tree.noimage">No Image</span></div>
+              <span class="ftree-code">1</span>
+              <span class="ftree-name" data-i18n="sub.x3.c1">Kunjan Pillai</span>
+            </div>
+            <div class="ftree-card">
+              <div class="ftree-photo empty"><span data-i18n="tree.noimage">No Image</span></div>
+              <span class="ftree-code">2</span>
+              <span class="ftree-name" data-i18n="sub.x3.c2">Lakshmi Amma</span>
+            </div>
+            <div class="ftree-card">
+              <div class="ftree-photo empty"><span data-i18n="tree.noimage">No Image</span></div>
+              <span class="ftree-code">3</span>
+              <span class="ftree-name" data-i18n="sub.x3.c3">Kalyani Amma</span>
+            </div>
+            <div class="ftree-card">
+              <div class="ftree-photo empty"><span data-i18n="tree.noimage">No Image</span></div>
+              <span class="ftree-code">4</span>
+              <span class="ftree-name" data-i18n="sub.x3.c4">Velaudhan Nair</span>
+            </div>
+            <div class="ftree-card">
+              <div class="ftree-photo empty"><span data-i18n="tree.noimage">No Image</span></div>
+              <span class="ftree-code">5</span>
+              <span class="ftree-name" data-i18n="sub.x3.c5">Devaki Amma</span>
+            </div>
+            <div class="ftree-card">
+              <div class="ftree-photo empty"><span data-i18n="tree.noimage">No Image</span></div>
+              <span class="ftree-code">6</span>
+              <span class="ftree-name" data-i18n="sub.x3.c6">Raman Pillai</span>
+            </div>
+            <div class="ftree-card">
+              <div class="ftree-photo empty"><span data-i18n="tree.noimage">No Image</span></div>
+              <span class="ftree-code">7</span>
+              <span class="ftree-name" data-i18n="sub.x3.c7">Kuttan Pillai</span>
+            </div>
+            <div class="ftree-card">
+              <div class="ftree-photo empty"><span data-i18n="tree.noimage">No Image</span></div>
+              <span class="ftree-code">8</span>
+              <span class="ftree-name" data-i18n="sub.x3.c8">Parukutty Amma</span>
+            </div>
+            <div class="ftree-card">
+              <div class="ftree-photo empty"><span data-i18n="tree.noimage">No Image</span></div>
+              <span class="ftree-code">9</span>
+              <span class="ftree-name" data-i18n="sub.x3.c9">Thankamma Amma</span>
+            </div>
+            <div class="ftree-card placeholder">
+              <div class="ftree-photo empty"><span data-i18n="tree.noimage">No Image</span></div>
+              <span class="ftree-code">10</span>
+              <span class="ftree-name" data-i18n="sub.x3.c10">Bhargavi Amma</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- X2 Parameswaran Pillai Sub-tree Modal -->
+  <div class="modal-backdrop" id="x2-modal">
+    <div class="modal modal-lg">
+      <div class="modal-head">
+        <h3 class="modal-title" data-i18n="sub.x2.title">X2 Parameswaran Pillai — Family</h3>
+        <button class="modal-close" data-close aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M6 6l12 12M6 18L18 6" stroke-linecap="round" /></svg>
+        </button>
+      </div>
+      <div class="history-modal-content">
+        <div class="subtree">
+          <div class="subtree-couple">
+            <div class="ftree-card">
+              <div class="ftree-photo empty"><span data-i18n="tree.noimage">No Image</span></div>
+              <span class="ftree-code">X2</span>
+              <span class="ftree-name" data-i18n="sub.x2.head.name">Parameswaran Pillai</span>
+            </div>
+            <div class="ftree-card">
+              <div class="ftree-photo empty"><span data-i18n="tree.noimage">No Image</span></div>
+              <span class="ftree-name" data-i18n="sub.x2.spouse.name">Kalyanikutty Amma</span>
+            </div>
+          </div>
+          <div class="subtree-children-label" data-i18n="sub.x2.children.label">Children</div>
+          <div class="subtree-grid">
+            <div class="ftree-card">
+              <div class="ftree-photo empty"><span data-i18n="tree.noimage">No Image</span></div>
+              <span class="ftree-code">A1</span>
+              <span class="ftree-name" data-i18n="sub.x2.c1.name">Gopalakrishnan</span>
+            </div>
+            <div class="ftree-card">
+              <div class="ftree-photo empty"><span data-i18n="tree.noimage">No Image</span></div>
+              <span class="ftree-code">A2</span>
+              <span class="ftree-name" data-i18n="sub.x2.c2.name">Sarswathi Amma</span>
+              <span class="ftree-sub" data-i18n="sub.x2.c2.note">(Unmarried)</span>
+            </div>
+            <div class="ftree-card">
+              <div class="ftree-photo empty"><span data-i18n="tree.noimage">No Image</span></div>
+              <span class="ftree-code">A3</span>
+              <span class="ftree-name" data-i18n="sub.x2.c3.name">Rajamma</span>
+              <span class="ftree-sub" data-i18n="sub.x2.c3.note">(Thekke Palavila)</span>
+            </div>
+            <div class="ftree-card">
+              <div class="ftree-photo empty"><span data-i18n="tree.noimage">No Image</span></div>
+              <span class="ftree-code">A4</span>
+              <span class="ftree-name" data-i18n="sub.x2.c4.name">Gopinathan</span>
+              <span class="ftree-sub" data-i18n="sub.x2.c4.note">(Livestock)</span>
+            </div>
+            <div class="ftree-card">
+              <div class="ftree-photo empty"><span data-i18n="tree.noimage">No Image</span></div>
+              <span class="ftree-code">A5</span>
+              <span class="ftree-name" data-i18n="sub.x2.c5.name">Vasudevan Nair</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Y Chellamma Amma Sub-tree Modal -->
+  <div class="modal-backdrop" id="y-modal">
+    <div class="modal modal-lg">
+      <div class="modal-head">
+        <h3 class="modal-title" data-i18n="sub.y.title">Y Chellamma — Family</h3>
+        <button class="modal-close" data-close aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M6 6l12 12M6 18L18 6" stroke-linecap="round" /></svg>
+        </button>
+      </div>
+      <div class="history-modal-content">
+        <div class="subtree">
+          <div class="subtree-couple">
+            <div class="ftree-card">
+              <div class="ftree-photo empty"><span data-i18n="tree.noimage">No Image</span></div>
+              <span class="ftree-code">Y</span>
+              <span class="ftree-name" data-i18n="sub.y.head.name">Chellamma</span>
+            </div>
+            <div class="ftree-card">
+              <div class="ftree-photo empty"><span data-i18n="tree.noimage">No Image</span></div>
+              <span class="ftree-code" data-i18n="sub.y.spouse.code">4</span>
+              <span class="ftree-name" data-i18n="sub.y.spouse.name">Narayana Pillai</span>
+            </div>
+          </div>
+          <div class="subtree-children-label" data-i18n="sub.y.children.label">Children</div>
+          <div class="subtree-grid cols-6">
+            <div class="ftree-card">
+              <div class="ftree-photo empty"><span data-i18n="tree.noimage">No Image</span></div>
+              <span class="ftree-name" data-i18n="sub.y.c1.name">Gopalapillai</span>
+            </div>
+            <div class="ftree-card placeholder">
+              <div class="ftree-photo empty"><span data-i18n="tree.noimage">No Image</span></div>
+              <span class="dash" data-i18n="sub.y.c2.name">—</span>
+            </div>
+            <div class="ftree-card">
+              <div class="ftree-photo empty"><span data-i18n="tree.noimage">No Image</span></div>
+              <span class="ftree-name" data-i18n="sub.y.c3.name">Radhamma</span>
+            </div>
+            <div class="ftree-card">
+              <div class="ftree-photo empty"><span data-i18n="tree.noimage">No Image</span></div>
+              <span class="ftree-name" data-i18n="sub.y.c4.name">Raghavan Pillai</span>
+            </div>
+            <div class="ftree-card">
+              <div class="ftree-photo empty"><span data-i18n="tree.noimage">No Image</span></div>
+              <span class="ftree-name" data-i18n="sub.y.c5.name">Subhadrabhai</span>
+            </div>
+            <div class="ftree-card">
+              <div class="ftree-photo empty"><span data-i18n="tree.noimage">No Image</span></div>
+              <span class="ftree-name" data-i18n="sub.y.c6.name">Rethnam Amma</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Z Parvathi Pillai Sub-tree Modal -->
+  <div class="modal-backdrop" id="z-modal">
+    <div class="modal modal-lg">
+      <div class="modal-head">
+        <h3 class="modal-title" data-i18n="sub.z.title">Z Parvathi Pillai — Family</h3>
+        <button class="modal-close" data-close aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M6 6l12 12M6 18L18 6" stroke-linecap="round" /></svg>
+        </button>
+      </div>
+      <div class="history-modal-content">
+        <div class="subtree">
+          <div class="subtree-couple">
+            <div class="ftree-card">
+              <div class="ftree-photo empty"><span data-i18n="tree.noimage">No Image</span></div>
+              <span class="ftree-code" data-i18n="sub.z.head.code">2</span>
+              <span class="ftree-name" data-i18n="sub.z.head.name">Parvathi Pillai</span>
+            </div>
+            <div class="ftree-card">
+              <div class="ftree-photo empty"><span data-i18n="tree.noimage">No Image</span></div>
+              <span class="ftree-name" data-i18n="sub.z.spouse.name">Chellappan Pillai</span>
+            </div>
+          </div>
+          <div class="subtree-children-label" data-i18n="sub.z.children.label">Children</div>
+          <div class="subtree-grid">
+            <div class="ftree-card placeholder"><div class="ftree-photo empty"><span data-i18n="tree.noimage">No Image</span></div><span class="dash">—</span></div>
+            <div class="ftree-card placeholder"><div class="ftree-photo empty"><span data-i18n="tree.noimage">No Image</span></div><span class="dash">—</span></div>
+            <div class="ftree-card placeholder"><div class="ftree-photo empty"><span data-i18n="tree.noimage">No Image</span></div><span class="dash">—</span></div>
+            <div class="ftree-card placeholder"><div class="ftree-photo empty"><span data-i18n="tree.noimage">No Image</span></div><span class="dash">—</span></div>
+            <div class="ftree-card placeholder"><div class="ftree-photo empty"><span data-i18n="tree.noimage">No Image</span></div><span class="dash">—</span></div>
+            <div class="ftree-card"><div class="ftree-photo empty"><span data-i18n="tree.noimage">No Image</span></div><span class="ftree-name" data-i18n="sub.z.c.pankajakshi">Pankajakshi Amma</span></div>
+            <div class="ftree-card placeholder"><div class="ftree-photo empty"><span data-i18n="tree.noimage">No Image</span></div><span class="dash">—</span></div>
+            <div class="ftree-card placeholder"><div class="ftree-photo empty"><span data-i18n="tree.noimage">No Image</span></div><span class="dash">—</span></div>
+            <div class="ftree-card placeholder"><div class="ftree-photo empty"><span data-i18n="tree.noimage">No Image</span></div><span class="dash">—</span></div>
+            <div class="ftree-card placeholder"><div class="ftree-photo empty"><span data-i18n="tree.noimage">No Image</span></div><span class="dash">—</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div id="layout-footer"></div>
 
   <script src="js/i18n.js"></script>
@@ -398,18 +758,31 @@
           </div>`;
           return;
         }
-        grid.innerHTML = list.map((f, i) => `
-          <article class="festival-card">
-            <div class="festival-banner">
-              <span class="festival-date">${f[`date_${lang}`] || f.date_en || ''}</span>
-              ${this.icons[i % this.icons.length]}
-            </div>
-            <div class="festival-body">
-              <h3 class="festival-title">${f[`name_${lang}`] || f.name_en}</h3>
-              <p class="festival-desc">${f[`desc_${lang}`] || f.desc_en || ''}</p>
-            </div>
-          </article>
-        `).join('');
+        const escAttr = (s) => String(s ?? '').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+        grid.innerHTML = list.map((f, i) => {
+          const dateLabel = f[`date_${lang}`] || f.date_en || '';
+          const hasImage = !!f.image;
+          const bannerStyle = hasImage ? ` style="background-image:url('${escAttr(f.image)}')"` : '';
+          // Alternate slide direction: even index from left, odd from right
+          const revealClass = i % 2 === 0 ? 'reveal-left' : 'reveal-right';
+          // Stagger the entrance so cards in the same row don't all hit at once
+          const delay = (i % 2) * 90 + Math.floor(i / 2) * 60;
+          return `
+            <article class="festival-card ${revealClass}" style="transition-delay:${delay}ms">
+              <div class="festival-banner${hasImage ? ' has-image' : ''}"${bannerStyle}>
+                ${dateLabel ? `<span class="festival-date">${Sec.esc(dateLabel)}</span>` : ''}
+                ${hasImage ? '' : this.icons[i % this.icons.length]}
+              </div>
+              <div class="festival-body">
+                <h3 class="festival-title">${Sec.esc(f[`name_${lang}`] || f.name_en)}</h3>
+                <p class="festival-desc">${Sec.esc(f[`desc_${lang}`] || f.desc_en || '')}</p>
+              </div>
+            </article>
+          `;
+        }).join('');
+
+        // Newly rendered cards need to be picked up by the IntersectionObserver
+        if (window.Reveal && Reveal.observeAll) Reveal.observeAll();
       },
 
       renderTimings() {
@@ -440,11 +813,46 @@
       bindHistoryModal() {
         const btn = document.getElementById('history-read-more');
         if (btn) btn.addEventListener('click', () => UI.openModal('history-modal'));
+
+        // Wire up clickable family-tree cards → their respective sub-tree modals
+        [['x2-card', 'x2-modal'], ['x3-card', 'x3-modal'], ['y-card', 'y-modal'], ['z-card', 'z-modal']]
+          .forEach(([cardId, modalId]) => {
+            const card = document.getElementById(cardId);
+            if (!card) return;
+            const open = () => UI.openModal(modalId);
+            card.addEventListener('click', open);
+            card.addEventListener('keydown', e => {
+              if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); }
+            });
+          });
+      },
+
+      bindContactForm() {
+        const form = document.getElementById('contact-form');
+        if (!form) return;
+        form.addEventListener('submit', e => {
+          e.preventDefault();
+          const fd = new FormData(form);
+          const r = Store.addEnquiry({
+            name: fd.get('name'),
+            email: fd.get('email'),
+            subject: fd.get('subject'),
+            message: fd.get('message')
+          });
+          if (!r.ok) {
+            const errKey = !Sec.email((fd.get('email') || '').trim()) ? 'contact.err.email' : 'contact.err.required';
+            UI.toast(I18N.t(errKey), 'error');
+            return;
+          }
+          UI.toast(I18N.t('contact.success'), 'success');
+          form.reset();
+        });
       },
 
       init() {
         this.renderAll();
         this.bindHistoryModal();
+        this.bindContactForm();
         document.addEventListener('lang:change', () => this.renderAll());
       }
     };

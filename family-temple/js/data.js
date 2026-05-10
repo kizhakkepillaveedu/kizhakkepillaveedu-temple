@@ -1,11 +1,140 @@
 /* Data layer — localStorage backed store for pujas, festivals, timings, bookings */
 
+/* Nakshatram (birth star) list — 27 entries shared across booking + dashboard */
+const STARS = [
+  { value: 'aswathy',       en: 'Aswathy',       ml: 'അശ്വതി' },
+  { value: 'bharani',       en: 'Bharani',       ml: 'ഭരണി' },
+  { value: 'karthika',      en: 'Karthika',      ml: 'കാർത്തിക' },
+  { value: 'rohini',        en: 'Rohini',        ml: 'രോഹിണി' },
+  { value: 'makayiram',     en: 'Makayiram',     ml: 'മകയിരം' },
+  { value: 'thiruvathira',  en: 'Thiruvathira',  ml: 'തിരുവാതിര' },
+  { value: 'punartham',     en: 'Punartham',     ml: 'പുണർതം' },
+  { value: 'pooyam',        en: 'Pooyam',        ml: 'പൂയം' },
+  { value: 'ayilyam',       en: 'Ayilyam',       ml: 'ആയില്യം' },
+  { value: 'makam',         en: 'Makam',         ml: 'മകം' },
+  { value: 'pooram',        en: 'Pooram',        ml: 'പൂരം' },
+  { value: 'uthram',        en: 'Uthram',        ml: 'ഉത്രം' },
+  { value: 'atham',         en: 'Atham',         ml: 'അത്തം' },
+  { value: 'chithira',      en: 'Chithira',      ml: 'ചിത്തിര' },
+  { value: 'chothi',        en: 'Chothi',        ml: 'ചോതി' },
+  { value: 'vishakham',     en: 'Vishakham',     ml: 'വിശാഖം' },
+  { value: 'anizham',       en: 'Anizham',       ml: 'അനിഴം' },
+  { value: 'thrikketta',    en: 'Thrikketta',    ml: 'തൃക്കേട്ട' },
+  { value: 'moolam',        en: 'Moolam',        ml: 'മൂലം' },
+  { value: 'pooradam',      en: 'Pooradam',      ml: 'പൂരാടം' },
+  { value: 'uthradam',      en: 'Uthradam',      ml: 'ഉത്രാടം' },
+  { value: 'thiruvonam',    en: 'Thiruvonam',    ml: 'തിരുവോണം' },
+  { value: 'avittom',       en: 'Avittom',       ml: 'അവിട്ടം' },
+  { value: 'chathayam',     en: 'Chathayam',     ml: 'ചതയം' },
+  { value: 'pooruruttathi', en: 'Pooruruttathi', ml: 'പൂരൂരുട്ടാതി' },
+  { value: 'uthrattathi',   en: 'Uthrattathi',   ml: 'ഉത്രട്ടാതി' },
+  { value: 'revathi',       en: 'Revathi',       ml: 'രേവതി' }
+];
+
+const Stars = {
+  list: STARS,
+  find(value) {
+    if (!value) return null;
+    const v = String(value).toLowerCase();
+    return STARS.find(s => s.value === v || s.en.toLowerCase() === v || s.ml === value) || null;
+  },
+  label(value) {
+    if (!value) return '';
+    const s = this.find(value);
+    if (!s) return value;
+    const lang = (typeof I18N !== 'undefined' && I18N.current) ? I18N.current : 'ml';
+    return lang === 'ml' ? s.ml : s.en;
+  },
+  options(placeholder) {
+    return `<option value="">${placeholder || '—'}</option>` +
+      STARS.map(s => `<option value="${s.value}">${s.ml} (${s.en})</option>`).join('');
+  }
+};
+
+/* ===== Security utilities ===== */
+
+const Sec = {
+  esc(s) {
+    return String(s ?? '').replace(/[&<>"'`]/g, c => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;', '`': '&#96;'
+    }[c]));
+  },
+  email(s) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(s || '').trim());
+  },
+  phone(s) {
+    return /^\+?[0-9\-\s]{7,20}$/.test(String(s || '').trim());
+  },
+  trim(s, max = 200) {
+    return String(s ?? '').trim().slice(0, max);
+  }
+};
+
+const CryptoUtil = {
+  generateSalt() {
+    const arr = new Uint8Array(16);
+    crypto.getRandomValues(arr);
+    return Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('');
+  },
+  async hash(password, salt) {
+    const enc = new TextEncoder();
+    const data = enc.encode(`${salt}:${password}`);
+    const buf = await crypto.subtle.digest('SHA-256', data);
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+};
+
+const RateLimit = {
+  KEY_PREFIX: 'kpv.rl.',
+  MAX_ATTEMPTS: 5,
+  WINDOW_MS: 5 * 60 * 1000,
+
+  _key(scope) { return this.KEY_PREFIX + scope; },
+
+  _read(scope) {
+    try {
+      const raw = localStorage.getItem(this._key(scope));
+      return raw ? JSON.parse(raw) : { count: 0, lockedUntil: 0 };
+    } catch { return { count: 0, lockedUntil: 0 }; }
+  },
+
+  _write(scope, val) {
+    localStorage.setItem(this._key(scope), JSON.stringify(val));
+  },
+
+  check(scope) {
+    const s = this._read(scope);
+    if (s.lockedUntil && s.lockedUntil > Date.now()) {
+      return { allowed: false, retryInSeconds: Math.ceil((s.lockedUntil - Date.now()) / 1000) };
+    }
+    return { allowed: true };
+  },
+
+  fail(scope) {
+    const s = this._read(scope);
+    s.count = (s.count || 0) + 1;
+    if (s.count >= this.MAX_ATTEMPTS) {
+      s.lockedUntil = Date.now() + this.WINDOW_MS;
+      s.count = 0;
+    }
+    this._write(scope, s);
+    return s;
+  },
+
+  reset(scope) {
+    localStorage.removeItem(this._key(scope));
+  }
+};
+
 const STORE_KEYS = {
   pujas: 'kpv.pujas',
   festivals: 'kpv.festivals',
   timings: 'kpv.timings',
   bookings: 'kpv.bookings',
-  admin: 'kpv.admin'
+  admin: 'kpv.admin',
+  users: 'kpv.users',
+  session: 'kpv.session',
+  enquiries: 'kpv.enquiries'
 };
 
 const DEFAULT_PUJAS = [
@@ -128,6 +257,24 @@ const Store = {
     if (!localStorage.getItem(STORE_KEYS.festivals)) this.write(STORE_KEYS.festivals, DEFAULT_FESTIVALS);
     if (!localStorage.getItem(STORE_KEYS.timings)) this.write(STORE_KEYS.timings, DEFAULT_TIMINGS);
     if (!localStorage.getItem(STORE_KEYS.bookings)) this.write(STORE_KEYS.bookings, []);
+    if (!localStorage.getItem(STORE_KEYS.users)) this.write(STORE_KEYS.users, []);
+    if (!localStorage.getItem(STORE_KEYS.enquiries)) this.write(STORE_KEYS.enquiries, []);
+    this.ensureAdminUser();
+  },
+
+  ensureAdminUser() {
+    const list = this.read(STORE_KEYS.users, []);
+    if (list.some(u => u.isAdmin)) return;
+    list.push({
+      id: 'admin-seed',
+      name: 'Temple Admin',
+      email: 'admin@temple.com',
+      phone: '',
+      password: 'admin123',
+      isAdmin: true,
+      createdAt: new Date().toISOString()
+    });
+    this.write(STORE_KEYS.users, list);
   },
 
   /* ----- Pujas ----- */
@@ -186,15 +333,133 @@ const Store = {
     if (idx >= 0) { list[idx].status = status; this.saveBookings(list); }
   },
   deleteBooking(id) { this.saveBookings(this.getBookings().filter(b => b.id !== id)); },
-
-  /* ----- Admin auth (simple, client-side) ----- */
-  ADMIN_PASSWORD: 'admin123',
-  isAdmin() { return sessionStorage.getItem('kpv.admin') === '1'; },
-  loginAdmin(pw) {
-    if (pw === this.ADMIN_PASSWORD) { sessionStorage.setItem('kpv.admin', '1'); return true; }
-    return false;
+  getUserBookings(userId) {
+    return this.getBookings().filter(b => b.userId === userId);
   },
-  logoutAdmin() { sessionStorage.removeItem('kpv.admin'); }
+  /* ----- Enquiries (contact form) ----- */
+  getEnquiries() { return this.read(STORE_KEYS.enquiries, []); },
+  addEnquiry({ name, email, subject, message }) {
+    const e = {
+      id: this.uid(),
+      name: Sec.trim(name, 80),
+      email: Sec.trim(email, 120).toLowerCase(),
+      subject: Sec.trim(subject, 40) || 'general',
+      message: Sec.trim(message, 1000),
+      createdAt: new Date().toISOString(),
+      status: 'new'
+    };
+    if (!e.name || !Sec.email(e.email) || !e.message) {
+      return { ok: false, error: 'invalid' };
+    }
+    const list = this.getEnquiries();
+    list.unshift(e);
+    this.write(STORE_KEYS.enquiries, list);
+    return { ok: true, enquiry: e };
+  },
+
+  generateReceipt() {
+    const d = new Date();
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    const seq = String(this.getBookings().length + 1).padStart(4, '0');
+    return `KPV-${yyyy}${mm}${dd}-${seq}`;
+  },
+
+  /* ----- Users (devotee accounts) ----- */
+  getUsers() { return this.read(STORE_KEYS.users, []); },
+  saveUsers(list) { this.write(STORE_KEYS.users, list); },
+  findUserByEmail(email) {
+    const e = (email || '').trim().toLowerCase();
+    return this.getUsers().find(u => u.email === e) || null;
+  },
+  async signupUser({ name, email, phone, password }) {
+    const cleanName = Sec.trim(name, 80);
+    const e = Sec.trim(email, 120).toLowerCase();
+    const cleanPhone = Sec.trim(phone, 20);
+    if (!cleanName || !e || !password) return { ok: false, error: 'missing' };
+    if (!Sec.email(e)) return { ok: false, error: 'badEmail' };
+    if (cleanPhone && !Sec.phone(cleanPhone)) return { ok: false, error: 'badPhone' };
+    if (String(password).length < 6) return { ok: false, error: 'weakPassword' };
+    if (this.findUserByEmail(e)) return { ok: false, error: 'exists' };
+
+    const salt = CryptoUtil.generateSalt();
+    const passwordHash = await CryptoUtil.hash(password, salt);
+    const user = {
+      id: this.uid(),
+      name: cleanName,
+      email: e,
+      phone: cleanPhone,
+      salt,
+      passwordHash,
+      isAdmin: false,
+      createdAt: new Date().toISOString()
+    };
+    const list = this.getUsers();
+    list.push(user);
+    this.saveUsers(list);
+    sessionStorage.setItem(STORE_KEYS.session, user.id);
+    return { ok: true, user };
+  },
+
+  async loginUser(email, password) {
+    const e = Sec.trim(email, 120).toLowerCase();
+    const scope = 'login:' + e;
+    const gate = RateLimit.check(scope);
+    if (!gate.allowed) {
+      return { ok: false, error: 'locked', retryInSeconds: gate.retryInSeconds };
+    }
+
+    const u = this.findUserByEmail(e);
+    if (!u) {
+      RateLimit.fail(scope);
+      return { ok: false, error: 'invalid' };
+    }
+
+    let valid = false;
+
+    // New (hashed) credentials
+    if (u.salt && u.passwordHash) {
+      const hash = await CryptoUtil.hash(password, u.salt);
+      valid = (hash === u.passwordHash);
+    }
+    // Legacy (plaintext) — verify, then migrate to hashed
+    if (!valid && typeof u.password === 'string' && u.password.length > 0) {
+      if (u.password === password) {
+        const salt = CryptoUtil.generateSalt();
+        const passwordHash = await CryptoUtil.hash(password, salt);
+        u.salt = salt;
+        u.passwordHash = passwordHash;
+        delete u.password;
+        const list = this.getUsers().map(x => x.id === u.id ? u : x);
+        this.saveUsers(list);
+        valid = true;
+      }
+    }
+
+    if (!valid) {
+      RateLimit.fail(scope);
+      return { ok: false, error: 'invalid' };
+    }
+
+    RateLimit.reset(scope);
+    sessionStorage.setItem(STORE_KEYS.session, u.id);
+    return { ok: true, user: u };
+  },
+  logoutUser() { sessionStorage.removeItem(STORE_KEYS.session); },
+  getCurrentUser() {
+    const id = sessionStorage.getItem(STORE_KEYS.session);
+    if (!id) return null;
+    return this.getUsers().find(u => u.id === id) || null;
+  },
+  isUserLoggedIn() { return !!this.getCurrentUser(); },
+
+  /* ----- Admin auth — derived from the current user's isAdmin flag ----- */
+  isAdmin() {
+    const u = this.getCurrentUser();
+    return !!(u && u.isAdmin);
+  },
+  logoutAdmin() { this.logoutUser(); }
 };
 
 Store.init();

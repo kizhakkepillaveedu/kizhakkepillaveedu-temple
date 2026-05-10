@@ -10,30 +10,11 @@
   <link rel="stylesheet" href="css/style.css" />
   <script src="https://unpkg.com/lenis@1.1.20/dist/lenis.min.js" defer></script>
 </head>
-<body data-lang="ml">
+<body data-lang="ml" data-layout="admin">
   <div id="layout-header"></div>
 
-  <!-- Login -->
-  <section id="login-view" class="container">
-    <div class="login-box">
-      <div class="lock">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
-      </div>
-      <h2 data-i18n="admin.login.title">Admin Access</h2>
-      <p class="hint" data-i18n="admin.login.hint">Enter the admin password to manage temple data.</p>
-      <form id="login-form">
-        <div class="form-field" style="margin-bottom:16px;text-align:left;">
-          <input type="password" id="login-pw" data-i18n-placeholder="admin.login.placeholder" placeholder="Password" required />
-        </div>
-        <button type="submit" class="btn btn-primary btn-block" data-i18n="admin.login.btn">Sign In</button>
-        <p id="login-err" style="color:#b91c1c;margin-top:12px;font-size:.88rem;display:none;" data-i18n="admin.login.error">Incorrect password.</p>
-      </form>
-      <p style="margin-top:18px;font-size:.78rem;color:var(--color-text-muted);">Default password: <code>admin123</code></p>
-    </div>
-  </section>
-
   <!-- Admin Shell -->
-  <section id="admin-view" class="hidden">
+  <section id="admin-view">
     <div class="admin-shell">
       <aside class="admin-sidebar">
         <nav class="admin-nav" id="admin-nav">
@@ -154,22 +135,44 @@
       <form id="festival-form">
         <input type="hidden" name="id" />
         <div class="form-row cols-2">
-          <div class="form-field"><label data-i18n="admin.field.name">Name</label><input type="text" name="name_en" required /></div>
-          <div class="form-field"><label data-i18n="admin.field.name.ml">Name (Malayalam)</label><input type="text" name="name_ml" /></div>
+          <div class="form-field"><label data-i18n="admin.field.name">Name</label><input type="text" name="name_en" maxlength="100" required /></div>
+          <div class="form-field"><label data-i18n="admin.field.name.ml">Name (Malayalam)</label><input type="text" name="name_ml" maxlength="100" /></div>
         </div>
         <div class="form-row cols-2">
-          <div class="form-field"><label data-i18n="admin.field.dateLabel">Date Label</label><input type="text" name="date_en" placeholder="e.g. Vrischikam 1" /></div>
-          <div class="form-field"><label data-i18n="admin.field.dateLabel.ml">Date Label (ML)</label><input type="text" name="date_ml" /></div>
+          <div class="form-field"><label data-i18n="admin.field.dateLabel">Date Label</label><input type="text" name="date_en" maxlength="40" placeholder="e.g. Vrischikam 1" /></div>
+          <div class="form-field"><label data-i18n="admin.field.dateLabel.ml">Date Label (ML)</label><input type="text" name="date_ml" maxlength="40" /></div>
         </div>
         <div class="form-row cols-2">
-          <div class="form-field"><label data-i18n="admin.field.desc">Description</label><textarea name="desc_en" rows="2"></textarea></div>
-          <div class="form-field"><label data-i18n="admin.field.desc.ml">Description (Malayalam)</label><textarea name="desc_ml" rows="2"></textarea></div>
+          <div class="form-field"><label data-i18n="admin.field.desc">Description</label><textarea name="desc_en" rows="2" maxlength="500"></textarea></div>
+          <div class="form-field"><label data-i18n="admin.field.desc.ml">Description (Malayalam)</label><textarea name="desc_ml" rows="2" maxlength="500"></textarea></div>
+        </div>
+        <div class="form-row">
+          <div class="form-field">
+            <label data-i18n="admin.field.image">Image</label>
+            <input type="file" id="festival-image-file" accept="image/*" />
+            <span class="field-hint" data-i18n="admin.field.image.hint">Choose an image file, or paste a URL below.</span>
+            <input type="url" name="image" id="festival-image-url" placeholder="https://..." style="margin-top:10px;" />
+            <div class="image-preview" id="festival-image-preview"></div>
+          </div>
         </div>
         <div class="flex-between" style="margin-top:8px;">
           <button type="button" class="btn btn-ghost" data-close data-i18n="admin.cancel">Cancel</button>
           <button type="submit" class="btn btn-primary" data-i18n="admin.save">Save</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Booking Detail Modal -->
+  <div class="modal-backdrop" id="booking-detail-modal">
+    <div class="modal modal-lg">
+      <div class="modal-head">
+        <h3 class="modal-title" data-i18n="admin.booking.detail.title">Booking Details</h3>
+        <button class="modal-close" data-close aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M6 6l12 12M6 18L18 6" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div id="booking-detail-body" class="booking-detail-body"></div>
     </div>
   </div>
 

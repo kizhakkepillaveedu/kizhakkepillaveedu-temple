@@ -5,6 +5,17 @@ const UI = {
     this.initMobileNav();
     this.markActiveNav();
     this.initHeaderScroll();
+    this.bindLogout();
+  },
+
+  bindLogout() {
+    document.addEventListener('click', e => {
+      const btn = e.target.closest('.js-logout');
+      if (!btn) return;
+      e.preventDefault();
+      if (typeof Store !== 'undefined' && Store.logoutUser) Store.logoutUser();
+      window.location.href = 'index.html';
+    });
   },
 
   initHeaderScroll() {
@@ -13,11 +24,12 @@ const UI = {
     const hero = document.querySelector('.hero');
     this.updateHeader = () => {
       const isMobile = window.innerWidth <= 860;
-      const onLight = !!document.querySelector('.hero-slide[data-slide="1"].active');
-      // On mobile, slide 2 puts the image on top — keep header transparent there
-      const forceSolid = onLight && !isMobile;
-      if (!hero || window.scrollY > 30 || forceSolid) header.classList.add('scrolled');
-      else header.classList.remove('scrolled');
+      const onSlide2 = !!document.querySelector('.hero-slide[data-slide="1"].active');
+      const scrolled = !hero || window.scrollY > 30;
+      // Over light slide (desktop): transparent header but dark text for readability
+      const overLight = !scrolled && onSlide2 && !isMobile;
+      header.classList.toggle('scrolled', scrolled);
+      header.classList.toggle('over-light', overLight);
     };
     window.addEventListener('scroll', this.updateHeader, { passive: true });
     window.addEventListener('resize', this.updateHeader, { passive: true });
@@ -58,23 +70,49 @@ const UI = {
 
   openModal(id) {
     const m = document.getElementById(id);
-    if (m) m.classList.add('open');
+    if (!m) return;
+    m.classList.add('open');
+    this._lockScroll();
   },
 
   closeModal(id) {
     const m = document.getElementById(id);
-    if (m) m.classList.remove('open');
+    if (!m) return;
+    m.classList.remove('open');
+    this._unlockScrollIfNoneOpen();
+  },
+
+  _lockScroll() {
+    document.body.classList.add('modal-open');
+    if (window.lenis && typeof window.lenis.stop === 'function') window.lenis.stop();
+  },
+
+  _unlockScrollIfNoneOpen() {
+    if (document.querySelector('.modal-backdrop.open')) return;
+    document.body.classList.remove('modal-open');
+    if (window.lenis && typeof window.lenis.start === 'function') window.lenis.start();
   },
 
   bindModalCloses() {
     // Modals close ONLY via [data-close] (the X button / Cancel) or ESC — not backdrop click
     document.querySelectorAll('.modal-backdrop').forEach(bd => {
+      // Tell Lenis not to hijack wheel events inside modals (so internal scroll works without page scrolling)
+      bd.setAttribute('data-lenis-prevent', '');
+      const modal = bd.querySelector('.modal');
+      if (modal) modal.setAttribute('data-lenis-prevent', '');
+
       bd.querySelectorAll('[data-close]').forEach(btn => {
-        btn.addEventListener('click', () => bd.classList.remove('open'));
+        btn.addEventListener('click', () => {
+          bd.classList.remove('open');
+          this._unlockScrollIfNoneOpen();
+        });
       });
     });
     document.addEventListener('keydown', e => {
-      if (e.key === 'Escape') document.querySelectorAll('.modal-backdrop.open').forEach(m => m.classList.remove('open'));
+      if (e.key === 'Escape') {
+        document.querySelectorAll('.modal-backdrop.open').forEach(m => m.classList.remove('open'));
+        this._unlockScrollIfNoneOpen();
+      }
     });
   }
 };
@@ -130,18 +168,57 @@ const HeroSlider = {
   }
 };
 
+/* ============== Family-tree clickable cards (event delegation) ============== */
+function initTreeCardClicks() {
+  const map = {
+    'x2-card': 'x2-modal',
+    'x3-card': 'x3-modal',
+    'y-card': 'y-modal',
+    'z-card': 'z-modal'
+  };
+
+  document.addEventListener('click', (e) => {
+    const card = e.target.closest('.ftree-card.clickable');
+    if (!card || !card.id) return;
+    const modalId = map[card.id];
+    if (modalId) UI.openModal(modalId);
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const active = document.activeElement;
+    if (!active || !active.classList || !active.classList.contains('clickable')) return;
+    if (!active.id) return;
+    const modalId = map[active.id];
+    if (modalId) {
+      e.preventDefault();
+      UI.openModal(modalId);
+    }
+  });
+}
+
 /* ============== Scroll-to-top button ============== */
 function initScrollTop() {
   const btn = document.getElementById('scroll-top-btn');
   if (!btn) return;
 
-  const update = () => btn.classList.toggle('show', window.scrollY > 400);
+  const THRESHOLD = 120; // px — show as soon as the user starts scrolling
+  const currentScroll = () => {
+    if (window.lenis && typeof window.lenis.scroll === 'number') return window.lenis.scroll;
+    return window.scrollY || document.documentElement.scrollTop || 0;
+  };
+  const update = () => btn.classList.toggle('show', currentScroll() > THRESHOLD);
+
   window.addEventListener('scroll', update, { passive: true });
+  // Lenis can swallow native scroll events on some setups — listen on its bus too
+  if (window.lenis && typeof window.lenis.on === 'function') {
+    window.lenis.on('scroll', update);
+  }
   update();
 
   btn.addEventListener('click', () => {
     if (window.lenis && typeof window.lenis.scrollTo === 'function') {
-      window.lenis.scrollTo(0, { duration: 1.4 });
+      window.lenis.scrollTo(0, { duration: 1.2 });
     } else {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -194,37 +271,47 @@ function initSmoothScroll() {
   window.lenis = lenis;
 }
 
-/* ============== Scroll-reveal — content (text + images) fades, section bg stays solid ============== */
-function initScrollReveal() {
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+/* ============== Scroll-reveal — content fades/slides in as it enters viewport ============== */
+const Reveal = {
+  io: null,
 
-  // Apply reveal to inner CONTENT only (not entire sections which have backgrounds).
-  // This way the section background stays solid and only text/images fade in.
-  const fadeTargets = document.querySelectorAll(
-    '.intro-text, .quick-info, .ftree-row, .ftree-note, .festival-card, .puja-card, .family-tree-wrap, .section-head'
-  );
-  fadeTargets.forEach(el => {
-    if (!el.classList.contains('reveal-left') && !el.classList.contains('reveal-right')) {
-      el.classList.add('reveal');
-    }
-  });
+  init() {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-  // Combined target list (reveal + reveal-left + reveal-right — image cards already use directional reveals via HTML)
-  const allTargets = document.querySelectorAll('.reveal, .reveal-left, .reveal-right');
-
-  const io = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('in-view');
-      } else {
-        // Re-trigger: remove when fully out of view so animation plays again on return
-        entry.target.classList.remove('in-view');
+    // Auto-apply default upward reveal to common content blocks (skipping any that
+    // already carry directional reveal classes set in HTML/JS).
+    document.querySelectorAll(
+      '.intro-text, .quick-info, .ftree-row, .ftree-note, .puja-card, .family-tree-wrap, .section-head'
+    ).forEach(el => {
+      if (!el.classList.contains('reveal-left') &&
+          !el.classList.contains('reveal-right') &&
+          !el.classList.contains('reveal')) {
+        el.classList.add('reveal');
       }
     });
-  }, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
 
-  allTargets.forEach(el => io.observe(el));
-}
+    this.io = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) entry.target.classList.add('in-view');
+        else entry.target.classList.remove('in-view');
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
+
+    this.observeAll();
+  },
+
+  // Re-scan the DOM and observe any reveal targets not yet observed.
+  // Safe to call repeatedly — IntersectionObserver.observe is a no-op for already-observed targets.
+  observeAll() {
+    if (!this.io) return;
+    document.querySelectorAll('.reveal, .reveal-left, .reveal-right').forEach(el => {
+      this.io.observe(el);
+    });
+  }
+};
+
+function initScrollReveal() { Reveal.init(); }
+window.Reveal = Reveal;
 
 document.addEventListener('DOMContentLoaded', () => {
   I18N.init();
@@ -235,4 +322,5 @@ document.addEventListener('DOMContentLoaded', () => {
   initSmoothScroll();
   initScrollReveal();
   initScrollTop();
+  initTreeCardClicks();
 });

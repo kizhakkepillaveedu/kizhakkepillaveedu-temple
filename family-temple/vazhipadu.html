@@ -3,71 +3,215 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Vazhipadu Booking · Kizhakke Pilla Veedu</title>
+  <title>Book Vazhipadu · Kizhakke Pilla Veedu</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&family=Noto+Sans+Malayalam:wght@400;500;600;700&family=Noto+Serif+Malayalam:wght@500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
-  <script src="https://unpkg.com/lenis@1.1.20/dist/lenis.min.js" defer></script>
 </head>
 <body data-lang="ml">
   <div id="layout-header"></div>
 
   <section class="page-hero">
     <div class="container">
-      <h1 data-i18n="vazhipadu.title">Vazhipadu Booking</h1>
-      <p data-i18n="vazhipadu.sub">Offer your prayers from anywhere.</p>
+      <h1 data-i18n="vazhipadu.title">Book Vazhipadu</h1>
+      <p data-i18n="vazhipadu.sub">Offer prayers for yourself and your family. Add as many members as you wish.</p>
     </div>
   </section>
 
-  <section class="section">
+  <section class="section" style="padding-top:0;">
     <div class="container">
-      <div id="puja-grid" class="grid grid-3"></div>
+      <div class="booking-grid">
+
+        <!-- LEFT: Booking form -->
+        <form id="booking-form" class="booking-form">
+          <div class="booking-section">
+            <div class="booking-section-head">
+              <h3 data-i18n="booking.primary.title">Primary Devotee</h3>
+              <p class="hint" data-i18n="booking.primary.hint">Your contact details and your own offering.</p>
+            </div>
+            <div class="form-row cols-2">
+              <div class="form-field">
+                <label data-i18n="booking.field.name">Name</label>
+                <input type="text" name="name" maxlength="80" autocomplete="name" required />
+              </div>
+              <div class="form-field">
+                <label data-i18n="booking.field.star">Birth Star</label>
+                <select name="star" class="star-select" required>
+                  <option value="" data-i18n="booking.field.star.placeholder">— Choose —</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-field">
+                <label data-i18n="booking.field.address">Address</label>
+                <textarea name="address" rows="2" maxlength="500" autocomplete="street-address" required></textarea>
+              </div>
+            </div>
+            <div class="form-row cols-2">
+              <div class="form-field">
+                <label data-i18n="booking.field.phone">Phone</label>
+                <input type="tel" name="phone" maxlength="20" inputmode="tel" autocomplete="tel" required />
+              </div>
+              <div class="form-field">
+                <label data-i18n="booking.field.vazhipad">Select Vazhipad</label>
+                <select name="puja" class="vazhipad-select" required>
+                  <option value="" data-i18n="booking.field.vazhipad.placeholder">— Choose —</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-field">
+                <label data-i18n="booking.field.preferredDate">Preferred Date for Puja</label>
+                <input type="date" name="preferredDate" required />
+                <span class="field-hint" data-i18n="booking.field.preferredDate.hint">All offerings in this booking will be performed on this date.</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="booking-section">
+            <div class="booking-section-head with-action">
+              <div>
+                <h3 data-i18n="booking.members.title">Family Members</h3>
+                <p class="hint" data-i18n="booking.members.hint">Book vazhipadu for additional family members.</p>
+              </div>
+              <button type="button" class="btn btn-ghost btn-sm" id="add-member-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg>
+                <span data-i18n="booking.members.add">Add Family Member</span>
+              </button>
+            </div>
+            <div id="members-list" class="members-list"></div>
+            <div id="members-empty" class="members-empty" data-i18n="booking.members.empty">No family members added yet. Click "Add Family Member" to start.</div>
+          </div>
+
+          <div class="booking-section">
+            <div class="form-row">
+              <div class="form-field">
+                <label data-i18n="booking.field.notes">Special Notes (Optional)</label>
+                <textarea name="notes" rows="2" maxlength="500"></textarea>
+              </div>
+            </div>
+            <div class="booking-submit-wrap">
+              <button type="submit" class="btn btn-primary btn-lg" id="submit-booking">
+                <span data-i18n="booking.submit">Submit Booking</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+            </div>
+          </div>
+        </form>
+
+        <!-- RIGHT: Live cart / summary -->
+        <aside class="booking-cart" id="cart-aside">
+          <div class="cart-head">
+            <h3 data-i18n="booking.cart.title">Selected Offerings</h3>
+            <p class="hint" data-i18n="booking.cart.hint">Updates as you select vazhipadu.</p>
+          </div>
+          <div id="cart-items" class="cart-items"></div>
+          <div id="cart-empty" class="cart-empty" data-i18n="booking.cart.empty">No offerings selected yet.</div>
+          <div class="cart-total-row">
+            <span data-i18n="booking.cart.total">Total</span>
+            <span class="cart-total-amount"><span class="cur">₹</span><span id="cart-total">0</span></span>
+          </div>
+        </aside>
+
+      </div>
     </div>
   </section>
 
-  <!-- Booking Modal -->
-  <div class="modal-backdrop" id="book-modal">
-    <div class="modal">
-      <div class="modal-head">
-        <h3 class="modal-title" id="book-puja-name">—</h3>
-        <button class="modal-close" data-close aria-label="Close">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M6 6l12 12M6 18L18 6" stroke-linecap="round"/></svg>
+  <!-- Member row template -->
+  <template id="member-row-tpl">
+    <div class="member-row" data-member>
+      <div class="member-row-head">
+        <span class="member-row-no"></span>
+        <button type="button" class="member-remove" aria-label="Remove">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M6 6l12 12M6 18L18 6" stroke-linecap="round"/></svg>
         </button>
       </div>
-      <form id="book-form" class="form" style="padding:0;border:none;box-shadow:none;background:transparent;">
-        <input type="hidden" name="pujaId" id="book-puja-id" />
-        <div class="form-row cols-2">
-          <div class="form-field">
-            <label data-i18n="vazhipadu.devotee">Devotee Name</label>
-            <input type="text" name="name" required />
-          </div>
-          <div class="form-field">
-            <label data-i18n="vazhipadu.star">Birth Star</label>
-            <input type="text" name="star" />
-          </div>
+      <div class="form-row cols-3">
+        <div class="form-field">
+          <label data-i18n="booking.field.name">Name</label>
+          <input type="text" name="m_name" maxlength="80" required />
         </div>
-        <div class="form-row cols-2">
-          <div class="form-field">
-            <label data-i18n="vazhipadu.phone">Phone Number</label>
-            <input type="tel" name="phone" required />
-          </div>
-          <div class="form-field">
-            <label data-i18n="vazhipadu.date">Preferred Date</label>
-            <input type="date" name="date" required />
-          </div>
+        <div class="form-field">
+          <label data-i18n="booking.field.star">Birth Star</label>
+          <select name="m_star" class="star-select" required>
+            <option value="" data-i18n="booking.field.star.placeholder">— Choose —</option>
+          </select>
         </div>
-        <div class="form-row">
-          <div class="form-field">
-            <label data-i18n="vazhipadu.notes">Special Notes</label>
-            <textarea name="notes" rows="3"></textarea>
-          </div>
+        <div class="form-field">
+          <label data-i18n="booking.field.vazhipad">Select Vazhipad</label>
+          <select name="m_puja" class="vazhipad-select" required>
+            <option value="" data-i18n="booking.field.vazhipad.placeholder">— Choose —</option>
+          </select>
         </div>
-        <div class="flex-between" style="margin-top:8px;">
-          <button type="button" class="btn btn-ghost" data-close data-i18n="admin.cancel">Cancel</button>
-          <button type="submit" class="btn btn-primary" data-i18n="vazhipadu.confirm">Confirm Booking</button>
+      </div>
+    </div>
+  </template>
+
+  <!-- Payment Modal -->
+  <div class="modal-backdrop" id="payment-modal">
+    <div class="modal modal-md">
+      <div class="modal-head">
+        <h3 class="modal-title" data-i18n="payment.title">Choose Payment Method</h3>
+      </div>
+      <div class="payment-body">
+        <p class="hint" data-i18n="payment.hint">Select how you would like to pay for this booking.</p>
+        <div class="payment-summary">
+          <span data-i18n="booking.cart.total">Total</span>
+          <strong><span class="cur">₹</span><span id="pay-total">0</span></strong>
         </div>
-      </form>
+        <div class="payment-options">
+          <button type="button" class="payment-option" data-method="online">
+            <div class="payment-option-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h4"/></svg>
+            </div>
+            <div class="payment-option-text">
+              <strong data-i18n="payment.online">Pay Online</strong>
+              <span data-i18n="payment.online.hint">Card / UPI / Net Banking</span>
+            </div>
+          </button>
+          <button type="button" class="payment-option" data-method="counter">
+            <div class="payment-option-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><path d="M3 21h18M5 21V10l7-5 7 5v11M9 21v-7h6v7"/></svg>
+            </div>
+            <div class="payment-option-text">
+              <strong data-i18n="payment.counter">Pay at Temple Counter</strong>
+              <span data-i18n="payment.counter.hint">Show your receipt at the counter</span>
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Receipt Modal -->
+  <div class="modal-backdrop" id="receipt-modal">
+    <div class="modal modal-md">
+      <div class="modal-head">
+        <h3 class="modal-title" data-i18n="receipt.title">Booking Confirmed</h3>
+      </div>
+      <div class="receipt-body">
+        <div class="receipt-tick">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="36" height="36"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <p class="receipt-msg" data-i18n="receipt.msg">Your vazhipadu booking has been recorded. Please save the receipt number below.</p>
+        <div class="receipt-row">
+          <span data-i18n="receipt.number">Receipt Number</span>
+          <strong id="receipt-number">—</strong>
+        </div>
+        <div class="receipt-row">
+          <span data-i18n="receipt.method">Payment Method</span>
+          <strong id="receipt-method">—</strong>
+        </div>
+        <div class="receipt-row">
+          <span data-i18n="receipt.amount">Amount</span>
+          <strong><span class="cur">₹</span><span id="receipt-amount">0</span></strong>
+        </div>
+        <p class="receipt-counter-note" id="receipt-counter-note" data-i18n="receipt.counter.note">Please pay at the temple counter and present this receipt number.</p>
+        <div class="receipt-actions">
+          <button type="button" class="btn btn-primary btn-block" id="receipt-done" data-i18n="receipt.done">Done</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -78,71 +222,266 @@
   <script src="js/layout.js"></script>
   <script src="js/main.js"></script>
   <script>
-    const PujaPage = {
-      render() {
-        const grid = document.getElementById('puja-grid');
-        const lang = I18N.current;
-        const pujas = Store.getPujas();
-        if (!pujas.length) {
-          grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M9 10h.01M15 10h.01M9 16c1-1 5-1 6 0"/></svg>
-            <p>${I18N.t('vazhipadu.empty')}</p>
-          </div>`;
-          return;
-        }
-        grid.innerHTML = pujas.map(p => `
-          <div class="puja-card">
-            <h3 class="puja-name">${p[`name_${lang}`] || p.name_en}</h3>
-            <p class="puja-desc">${p[`desc_${lang}`] || p.desc_en || ''}</p>
-            <div class="puja-price"><span class="cur">₹</span><span class="amt">${p.price}</span></div>
-            <button class="btn btn-primary btn-block" data-puja="${p.id}">${I18N.t('vazhipadu.book')}</button>
-          </div>
-        `).join('');
-
-        grid.querySelectorAll('button[data-puja]').forEach(btn => {
-          btn.addEventListener('click', () => this.openBooking(btn.dataset.puja));
-        });
-      },
-
-      openBooking(pujaId) {
-        const puja = Store.getPujas().find(p => p.id === pujaId);
-        if (!puja) return;
-        const lang = I18N.current;
-        document.getElementById('book-puja-name').textContent = puja[`name_${lang}`] || puja.name_en;
-        document.getElementById('book-puja-id').value = puja.id;
-        document.getElementById('book-form').reset();
-        document.getElementById('book-puja-id').value = puja.id;
-        UI.openModal('book-modal');
-      },
-
-      submitBooking(e) {
-        e.preventDefault();
-        const fd = new FormData(e.target);
-        const pujaId = fd.get('pujaId');
-        const puja = Store.getPujas().find(p => p.id === pujaId);
-        if (!puja) return;
-        Store.addBooking({
-          pujaId,
-          pujaName: puja.name_en,
-          pujaNameMl: puja.name_ml,
-          price: puja.price,
-          name: fd.get('name'),
-          star: fd.get('star'),
-          phone: fd.get('phone'),
-          date: fd.get('date'),
-          notes: fd.get('notes')
-        });
-        UI.closeModal('book-modal');
-        UI.toast(I18N.t('vazhipadu.success'), 'success');
-      },
-
-      init() {
-        this.render();
-        document.getElementById('book-form').addEventListener('submit', e => this.submitBooking(e));
-        document.addEventListener('lang:change', () => this.render());
+    (function () {
+      // Auth gate
+      if (!Store.isUserLoggedIn()) {
+        window.location.href = 'login.html?next=vazhipadu.html';
+        return;
       }
-    };
-    document.addEventListener('DOMContentLoaded', () => PujaPage.init());
+
+      const Booking = {
+        pujas: [],
+        pendingBooking: null,
+
+        init() {
+          this.pujas = Store.getPujas();
+          this.populatePrimarySelect();
+          this.populateStarSelects();
+          this.bindEvents();
+          this.prefillUser();
+          this.setMinDate();
+          this.renderCart();
+        },
+
+        starOptions() {
+          return Stars.options(I18N.t('booking.field.star.placeholder'));
+        },
+
+        populateStarSelects() {
+          document.querySelectorAll('.star-select').forEach(sel => {
+            const v = sel.value;
+            sel.innerHTML = this.starOptions();
+            sel.value = v;
+          });
+        },
+
+        prefillUser() {
+          const u = Store.getCurrentUser();
+          if (!u) return;
+          const form = document.getElementById('booking-form');
+          if (form.elements['name'] && !form.elements['name'].value) form.elements['name'].value = u.name || '';
+          if (form.elements['phone'] && !form.elements['phone'].value) form.elements['phone'].value = u.phone || '';
+        },
+
+        setMinDate() {
+          const d = new Date();
+          const tomorrow = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1);
+          const iso = tomorrow.toISOString().slice(0, 10);
+          const el = document.querySelector('input[name="preferredDate"]');
+          if (el) el.min = iso;
+        },
+
+        pujaOptions() {
+          const lang = I18N.current;
+          const placeholder = I18N.t('booking.field.vazhipad.placeholder');
+          return `<option value="">${placeholder}</option>` +
+            this.pujas.map(p => {
+              const name = p[`name_${lang}`] || p.name_en;
+              return `<option value="${p.id}">${name} — ₹${p.price}</option>`;
+            }).join('');
+        },
+
+        populatePrimarySelect() {
+          document.querySelectorAll('.vazhipad-select').forEach(sel => {
+            sel.innerHTML = this.pujaOptions();
+          });
+        },
+
+        bindEvents() {
+          document.getElementById('add-member-btn').addEventListener('click', () => this.addMember());
+
+          // Update cart on any vazhipad/star select change OR on name input
+          document.addEventListener('change', e => {
+            if (!e.target.classList) return;
+            if (e.target.classList.contains('vazhipad-select') || e.target.classList.contains('star-select')) {
+              this.renderCart();
+            }
+          });
+          document.addEventListener('input', e => {
+            const t = e.target;
+            if (!t || !t.name) return;
+            if (['name', 'm_name'].includes(t.name)) this.renderCart();
+          });
+
+          // Re-localise selects on language change
+          document.addEventListener('lang:change', () => {
+            document.querySelectorAll('.vazhipad-select').forEach(sel => {
+              const v = sel.value;
+              sel.innerHTML = this.pujaOptions();
+              sel.value = v;
+            });
+            this.populateStarSelects();
+            this.renderCart();
+          });
+
+          document.getElementById('booking-form').addEventListener('submit', e => this.submit(e));
+
+          // Payment modal handlers
+          document.querySelectorAll('#payment-modal .payment-option').forEach(btn => {
+            btn.addEventListener('click', () => this.completePayment(btn.dataset.method));
+          });
+
+          // Receipt → home
+          document.getElementById('receipt-done').addEventListener('click', () => {
+            window.location.href = 'index.html';
+          });
+        },
+
+        addMember() {
+          const tpl = document.getElementById('member-row-tpl');
+          const node = tpl.content.firstElementChild.cloneNode(true);
+          node.querySelector('.vazhipad-select').innerHTML = this.pujaOptions();
+          node.querySelector('.star-select').innerHTML = this.starOptions();
+          node.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = I18N.t(el.dataset.i18n); });
+          node.querySelector('.member-remove').addEventListener('click', () => {
+            node.remove();
+            this.refreshMemberNumbers();
+            this.toggleMembersEmpty();
+            this.renderCart();
+          });
+          document.getElementById('members-list').appendChild(node);
+          this.refreshMemberNumbers();
+          this.toggleMembersEmpty();
+        },
+
+        refreshMemberNumbers() {
+          const rows = document.querySelectorAll('#members-list [data-member]');
+          rows.forEach((r, i) => {
+            r.querySelector('.member-row-no').textContent = `${I18N.t('booking.members.row')} ${i + 1}`;
+          });
+        },
+
+        toggleMembersEmpty() {
+          const has = document.querySelectorAll('#members-list [data-member]').length > 0;
+          document.getElementById('members-empty').style.display = has ? 'none' : '';
+        },
+
+        collectSelections() {
+          const form = document.getElementById('booking-form');
+          const lang = I18N.current;
+          const items = [];
+
+          const pPujaId = form.elements['puja'].value;
+          if (pPujaId) {
+            const p = this.pujas.find(x => x.id === pPujaId);
+            if (p) items.push({
+              who: Sec.trim(form.elements['name'].value, 80) || I18N.t('booking.cart.you'),
+              star: Sec.trim(form.elements['star'].value, 40),
+              pujaId: p.id,
+              pujaName: p[`name_${lang}`] || p.name_en,
+              price: Number(p.price) || 0,
+              role: 'primary'
+            });
+          }
+
+          document.querySelectorAll('#members-list [data-member]').forEach(row => {
+            const id = row.querySelector('select[name="m_puja"]').value;
+            if (!id) return;
+            const p = this.pujas.find(x => x.id === id);
+            if (!p) return;
+            const starEl = row.querySelector('[name="m_star"]');
+            const nameEl = row.querySelector('[name="m_name"]');
+            items.push({
+              who: Sec.trim(nameEl && nameEl.value, 80) || '—',
+              star: Sec.trim(starEl && starEl.value, 40),
+              pujaId: p.id,
+              pujaName: p[`name_${lang}`] || p.name_en,
+              price: Number(p.price) || 0,
+              role: 'member'
+            });
+          });
+
+          return items;
+        },
+
+        renderCart() {
+          const items = this.collectSelections();
+          const wrap = document.getElementById('cart-items');
+          const empty = document.getElementById('cart-empty');
+          const totalEl = document.getElementById('cart-total');
+
+          if (!items.length) {
+            wrap.innerHTML = '';
+            empty.style.display = '';
+            totalEl.textContent = '0';
+            return;
+          }
+          empty.style.display = 'none';
+          const starLabel = Sec.esc(I18N.t('booking.field.star'));
+          wrap.innerHTML = items.map(it => `
+            <div class="cart-item">
+              <div class="cart-item-top">
+                <span class="cart-item-name">${Sec.esc(it.pujaName)}</span>
+                <span class="cart-item-price"><span class="cur">₹</span>${Number(it.price) || 0}</span>
+              </div>
+              <div class="cart-item-who">${Sec.esc(it.who) || '—'}</div>
+              <div class="cart-item-star">${starLabel}: ${Sec.esc(Stars.label(it.star)) || '—'}</div>
+            </div>
+          `).join('');
+          const total = items.reduce((s, x) => s + (x.price || 0), 0);
+          totalEl.textContent = total.toLocaleString('en-IN');
+        },
+
+        submit(e) {
+          e.preventDefault();
+          const items = this.collectSelections();
+          if (!items.length) {
+            UI.toast(I18N.t('booking.err.empty'), 'error');
+            return;
+          }
+          const form = e.target;
+          const total = items.reduce((s, x) => s + (x.price || 0), 0);
+
+          // Stash form data; finalise after payment selection
+          this.pendingBooking = {
+            contact: {
+              name: Sec.trim(form.elements['name'].value, 80),
+              phone: Sec.trim(form.elements['phone'].value, 20),
+              address: Sec.trim(form.elements['address'].value, 500)
+            },
+            preferredDate: form.elements['preferredDate'].value,
+            members: items,
+            total,
+            notes: Sec.trim(form.elements['notes'].value, 500)
+          };
+
+          document.getElementById('pay-total').textContent = total.toLocaleString('en-IN');
+          UI.openModal('payment-modal');
+        },
+
+        completePayment(method) {
+          if (!this.pendingBooking) return;
+          const user = Store.getCurrentUser();
+          const receipt = Store.generateReceipt();
+          const paid = method === 'online';
+
+          const saved = Store.addBooking({
+            userId: user ? user.id : null,
+            ...this.pendingBooking,
+            payment: {
+              method,
+              status: paid ? 'paid' : 'pending_counter',
+              receipt
+            }
+          });
+
+          UI.closeModal('payment-modal');
+          this.showReceipt(saved, method);
+        },
+
+        showReceipt(booking, method) {
+          // textContent is XSS-safe by default — no escape needed
+          document.getElementById('receipt-number').textContent = booking.payment.receipt;
+          document.getElementById('receipt-method').textContent = I18N.t(method === 'online' ? 'payment.online' : 'payment.counter');
+          document.getElementById('receipt-amount').textContent = (Number(booking.total) || 0).toLocaleString('en-IN');
+          const counterNote = document.getElementById('receipt-counter-note');
+          counterNote.style.display = method === 'counter' ? '' : 'none';
+          UI.openModal('receipt-modal');
+        }
+      };
+
+      document.addEventListener('DOMContentLoaded', () => Booking.init());
+    })();
   </script>
 </body>
 </html>

@@ -2,44 +2,62 @@
 
 const Admin = {
   init() {
-    this.bindLogin();
+    // Auth gate: only admins can be here
+    if (!Store.isUserLoggedIn()) {
+      window.location.href = 'login.html?next=admin.html';
+      return;
+    }
+    if (!Store.isAdmin()) {
+      window.location.href = 'index.html';
+      return;
+    }
+
     this.bindLogout();
     this.bindTabs();
     this.bindPujaUI();
     this.bindFestivalUI();
-    this.refreshAuth();
-    document.addEventListener('lang:change', () => {
-      if (Store.isAdmin()) this.renderActiveTab();
+    this.bindDrawer();
+    this.activateTab('dashboard');
+    document.addEventListener('lang:change', () => this.renderActiveTab());
+  },
+
+  bindDrawer() {
+    const toggle = document.getElementById('admin-menu-toggle');
+    const shell = document.querySelector('.admin-shell');
+    const sidebar = document.querySelector('.admin-sidebar');
+    if (!toggle || !shell || !sidebar) return;
+
+    const close = () => shell.classList.remove('drawer-open');
+    const open = () => shell.classList.add('drawer-open');
+
+    toggle.addEventListener('click', e => {
+      e.stopPropagation();
+      shell.classList.contains('drawer-open') ? close() : open();
+    });
+    // Close drawer when any sidebar link is clicked (after activating its tab)
+    sidebar.querySelectorAll('.admin-nav-link').forEach(link => {
+      link.addEventListener('click', () => close());
+    });
+    // Close when clicking the dimmed backdrop (anywhere outside the sidebar)
+    shell.addEventListener('click', e => {
+      if (!shell.classList.contains('drawer-open')) return;
+      if (sidebar.contains(e.target)) return;
+      close();
+    });
+    // Close on Escape
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && shell.classList.contains('drawer-open')) close();
     });
   },
 
-  refreshAuth() {
-    const loggedIn = Store.isAdmin();
-    document.getElementById('login-view').classList.toggle('hidden', loggedIn);
-    document.getElementById('admin-view').classList.toggle('hidden', !loggedIn);
-    if (loggedIn) {
-      this.activateTab('dashboard');
-    }
-  },
-
-  bindLogin() {
-    document.getElementById('login-form').addEventListener('submit', e => {
-      e.preventDefault();
-      const pw = document.getElementById('login-pw').value;
-      if (Store.loginAdmin(pw)) {
-        document.getElementById('login-err').style.display = 'none';
-        this.refreshAuth();
-        UI.toast('Welcome back', 'success');
-      } else {
-        document.getElementById('login-err').style.display = 'block';
-      }
-    });
-  },
+  syncMobileTabSelect() { /* no-op kept for back-compat with activateTab */ },
 
   bindLogout() {
-    document.getElementById('logout-btn').addEventListener('click', () => {
-      Store.logoutAdmin();
-      this.refreshAuth();
+    const btn = document.getElementById('logout-btn');
+    if (!btn) return;
+    btn.addEventListener('click', () => {
+      Store.logoutUser();
+      window.location.href = 'index.html';
     });
   },
 
@@ -57,6 +75,7 @@ const Admin = {
     document.querySelectorAll('.admin-tab').forEach(p => {
       p.classList.toggle('hidden', p.dataset.pane !== tab);
     });
+    this.syncMobileTabSelect(tab);
     this.renderActiveTab();
   },
 
@@ -104,49 +123,184 @@ const Admin = {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 4h14a1 1 0 0 1 1 1v15l-4-3-4 3-4-3-4 3V5a1 1 0 0 1 1-1z"/></svg>
         <p>${I18N.t('admin.bookings.empty')}</p></div></div>`;
     }
-    const lang = I18N.current;
     return `<div class="data-table"><table><thead><tr>
-      <th>#</th><th>Devotee</th><th>Puja</th><th>Date</th><th>Phone</th><th>Status</th><th></th>
+      <th>#</th><th>Receipt</th><th>Devotee</th><th>Offerings</th><th>Puja Date</th><th>Phone</th><th>Total</th><th>Payment</th><th>Status</th><th></th>
     </tr></thead><tbody>
-      ${list.map((b, i) => `
-        <tr>
-          <td>${i + 1}</td>
-          <td><strong>${this.esc(b.name)}</strong>${b.star ? `<br/><small style="color:var(--color-text-muted);">${this.esc(b.star)}</small>` : ''}</td>
-          <td>${this.esc(lang === 'ml' && b.pujaNameMl ? b.pujaNameMl : b.pujaName)}<br/><small style="color:var(--color-text-muted);">₹${b.price}</small></td>
-          <td>${b.date}</td>
-          <td>${this.esc(b.phone)}</td>
-          <td>
-            <select class="status-select" data-id="${b.id}" style="padding:4px 8px;border:1px solid var(--color-border);border-radius:6px;font-size:.82rem;">
+      ${list.map((b, i) => {
+        const contact = b.contact || {};
+        const members = Array.isArray(b.members) ? b.members : [];
+        const pay = b.payment || {};
+        const receipt = pay.receipt || ('—');
+        const memberSummary = members.length
+          ? `${members.length} ${members.length === 1 ? 'offering' : 'offerings'}`
+          : '—';
+        const memberPreview = members.slice(0, 2).map(m => this.esc(m.pujaName || '')).join(', ')
+          + (members.length > 2 ? ` +${members.length - 2}` : '');
+        const preferred = b.preferredDate
+          ? new Date(b.preferredDate + 'T00:00:00').toLocaleDateString()
+          : '—';
+        const payMethodLabel = pay.method
+          ? I18N.t(pay.method === 'online' ? 'payment.online' : 'payment.counter')
+          : '—';
+        const payStatusKey = pay.status === 'paid' ? 'payment.status.paid'
+          : pay.status === 'pending_counter' ? 'payment.status.pending_counter' : null;
+        const payStatusLabel = payStatusKey ? I18N.t(payStatusKey) : '';
+        return `
+        <tr class="booking-row" data-view-booking="${b.id}" style="cursor:pointer;">
+          <td data-label="#">${i + 1}</td>
+          <td data-label="Receipt"><strong style="color:var(--color-gold-deep);font-family:'Inter',monospace;font-size:.82rem;">${this.esc(receipt)}</strong></td>
+          <td data-label="Devotee"><strong>${this.esc(contact.name || '—')}</strong></td>
+          <td data-label="Offerings">${memberSummary}<br/><small style="color:var(--color-text-muted);">${memberPreview || '—'}</small></td>
+          <td data-label="Puja Date">${preferred}</td>
+          <td data-label="Phone">${this.esc(contact.phone || '—')}</td>
+          <td data-label="Total"><strong style="color:var(--color-gold-deep);">₹${(b.total || 0).toLocaleString('en-IN')}</strong></td>
+          <td data-label="Payment">${payMethodLabel}${payStatusLabel ? `<br/><small class="pay-${pay.status}">${payStatusLabel}</small>` : ''}</td>
+          <td data-label="Status">
+            <select class="status-select" data-id="${b.id}" style="padding:4px 8px;border:1px solid var(--color-border);border-radius:6px;font-size:.82rem;" onclick="event.stopPropagation()">
               <option value="pending" ${b.status === 'pending' ? 'selected' : ''}>Pending</option>
               <option value="confirmed" ${b.status === 'confirmed' ? 'selected' : ''}>Confirmed</option>
+              <option value="completed" ${b.status === 'completed' ? 'selected' : ''}>Completed</option>
               <option value="cancelled" ${b.status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
             </select>
           </td>
-          <td>
-            <button class="icon-btn danger" data-del-booking="${b.id}" title="Delete">
+          <td data-label="" class="td-actions">
+            <button class="icon-btn danger" data-del-booking="${b.id}" title="Delete" onclick="event.stopPropagation()">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
             </button>
           </td>
+          <td data-label="" class="td-toggle" aria-hidden="true">
+            <button type="button" class="btn-expand" aria-label="Toggle details" onclick="event.stopPropagation(); this.closest('tr').classList.toggle('expanded')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="20" height="20"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </td>
         </tr>
-      `).join('')}
+      `;
+      }).join('')}
     </tbody></table></div>`;
   },
 
   bindBookingActions(scope) {
     scope.querySelectorAll('.status-select').forEach(sel => {
-      sel.addEventListener('change', () => {
+      sel.addEventListener('change', e => {
+        e.stopPropagation();
         Store.updateBookingStatus(sel.dataset.id, sel.value);
         UI.toast('Status updated', 'success');
         this.renderActiveTab();
       });
+      sel.addEventListener('click', e => e.stopPropagation());
     });
     scope.querySelectorAll('[data-del-booking]').forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
         if (!confirm(I18N.t('admin.delete.confirm'))) return;
         Store.deleteBooking(btn.dataset.delBooking);
         this.renderActiveTab();
       });
     });
+    scope.querySelectorAll('[data-view-booking]').forEach(row => {
+      row.addEventListener('click', () => this.openBookingDetail(row.dataset.viewBooking));
+    });
+  },
+
+  openBookingDetail(id) {
+    const b = Store.getBookings().find(x => x.id === id);
+    if (!b) return;
+    const contact = b.contact || {};
+    const pay = b.payment || {};
+    const members = Array.isArray(b.members) ? b.members : [];
+    const lang = I18N.current;
+    const pujas = Store.getPujas();
+    const localizedPuja = (m) => {
+      const p = pujas.find(x => x.id === m.pujaId);
+      if (p) return p[`name_${lang}`] || p.name_en;
+      return m.pujaName || '—';
+    };
+    const created = b.createdAt ? new Date(b.createdAt) : null;
+    const createdStr = created ? `${created.toLocaleDateString()} · ${created.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : '—';
+    const preferred = b.preferredDate
+      ? new Date(b.preferredDate + 'T00:00:00').toLocaleDateString()
+      : '—';
+    const payMethodLabel = pay.method
+      ? I18N.t(pay.method === 'online' ? 'payment.online' : 'payment.counter')
+      : '—';
+    const payStatusKey = pay.status === 'paid' ? 'payment.status.paid'
+      : pay.status === 'pending_counter' ? 'payment.status.pending_counter' : null;
+    const statusKey = 'status.' + (b.status || 'pending');
+
+    const memberRows = members.map((m, i) => `
+      <tr>
+        <td>${i + 1}</td>
+        <td><strong>${this.esc(m.who || '—')}</strong>${m.role === 'primary' ? ` <small style="color:var(--color-gold-deep);">(${I18N.t('admin.booking.primary')})</small>` : ''}</td>
+        <td>${this.esc(Stars.label(m.star) || '—')}</td>
+        <td>${this.esc(localizedPuja(m))}</td>
+        <td><strong style="color:var(--color-gold-deep);">₹${(m.price || 0).toLocaleString('en-IN')}</strong></td>
+      </tr>
+    `).join('');
+
+    document.getElementById('booking-detail-body').innerHTML = `
+      <div class="bd-header">
+        <div>
+          <span class="bd-receipt">${this.esc(pay.receipt || '#' + b.id.slice(-6).toUpperCase())}</span>
+          <span class="bd-created">${createdStr}</span>
+        </div>
+        <span class="status-badge status-${b.status || 'pending'}">${I18N.t(statusKey)}</span>
+      </div>
+
+      <div class="bd-grid">
+        <div class="bd-cell">
+          <span class="bd-label">${I18N.t('booking.field.name')}</span>
+          <span class="bd-value">${this.esc(contact.name || '—')}</span>
+        </div>
+        <div class="bd-cell">
+          <span class="bd-label">${I18N.t('booking.field.phone')}</span>
+          <span class="bd-value">${this.esc(contact.phone || '—')}</span>
+        </div>
+        <div class="bd-cell bd-cell-wide">
+          <span class="bd-label">${I18N.t('booking.field.address')}</span>
+          <span class="bd-value">${this.esc(contact.address || '—')}</span>
+        </div>
+        <div class="bd-cell">
+          <span class="bd-label">${I18N.t('booking.field.preferredDate')}</span>
+          <span class="bd-value">${preferred}</span>
+        </div>
+        <div class="bd-cell">
+          <span class="bd-label">${I18N.t('receipt.method')}</span>
+          <span class="bd-value">${payMethodLabel}</span>
+        </div>
+        ${payStatusKey ? `
+          <div class="bd-cell">
+            <span class="bd-label">${I18N.t('payment.status')}</span>
+            <span class="bd-value pay-${pay.status}">${I18N.t(payStatusKey)}</span>
+          </div>
+        ` : ''}
+      </div>
+
+      <h4 class="bd-section-title">${I18N.t('admin.booking.offerings')}</h4>
+      <div class="data-table"><table>
+        <thead><tr>
+          <th>#</th>
+          <th>${I18N.t('booking.field.name')}</th>
+          <th>${I18N.t('booking.field.star')}</th>
+          <th>${I18N.t('booking.field.vazhipad')}</th>
+          <th>${I18N.t('receipt.amount')}</th>
+        </tr></thead>
+        <tbody>${memberRows || `<tr><td colspan="5" style="text-align:center;color:var(--color-text-muted);">—</td></tr>`}</tbody>
+      </table></div>
+
+      ${b.notes ? `
+        <div class="bd-notes">
+          <span class="bd-label">${I18N.t('booking.field.notes')}</span>
+          <p>${this.esc(b.notes)}</p>
+        </div>
+      ` : ''}
+
+      <div class="bd-total">
+        <span>${I18N.t('booking.cart.total')}</span>
+        <strong>₹${(b.total || 0).toLocaleString('en-IN')}</strong>
+      </div>
+    `;
+
+    UI.openModal('booking-detail-modal');
   },
 
   /* ----- Pujas ----- */
@@ -162,10 +316,10 @@ const Admin = {
     </tr></thead><tbody>
       ${list.map(p => `
         <tr>
-          <td><strong>${this.esc(p.name_en)}</strong><br/><small style="color:var(--color-text-muted);">${this.esc(p.desc_en || '')}</small></td>
-          <td>${this.esc(p.name_ml || '—')}</td>
-          <td><strong style="color:var(--color-gold-deep);">₹${p.price}</strong></td>
-          <td>
+          <td data-label="Name"><strong>${this.esc(p.name_en)}</strong><br/><small style="color:var(--color-text-muted);">${this.esc(p.desc_en || '')}</small></td>
+          <td data-label="Name (ML)">${this.esc(p.name_ml || '—')}</td>
+          <td data-label="Price"><strong style="color:var(--color-gold-deep);">₹${p.price}</strong></td>
+          <td data-label="" class="td-actions">
             <button class="icon-btn" data-edit-puja="${p.id}" title="Edit">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
             </button>
@@ -235,14 +389,15 @@ const Admin = {
       return;
     }
     document.getElementById('festivals-list').innerHTML = `<div class="data-table"><table><thead><tr>
-      <th>Name</th><th>Date</th><th>Description</th><th></th>
+      <th></th><th>Name</th><th>Date</th><th>Description</th><th></th>
     </tr></thead><tbody>
       ${list.map(f => `
         <tr>
-          <td><strong>${this.esc(f.name_en)}</strong>${f.name_ml ? `<br/><small style="color:var(--color-text-muted);">${this.esc(f.name_ml)}</small>` : ''}</td>
-          <td><span class="tag confirmed">${this.esc(f.date_en || '')}</span></td>
-          <td><small>${this.esc((f.desc_en || '').slice(0, 80))}${(f.desc_en || '').length > 80 ? '…' : ''}</small></td>
-          <td>
+          <td data-label="Image">${f.image ? `<img class="row-thumb" src="${this.esc(f.image)}" alt="" />` : '<span class="row-thumb row-thumb-empty"></span>'}</td>
+          <td data-label="Name"><strong>${this.esc(f.name_en)}</strong>${f.name_ml ? `<br/><small style="color:var(--color-text-muted);">${this.esc(f.name_ml)}</small>` : ''}</td>
+          <td data-label="Date"><span class="tag confirmed">${this.esc(f.date_en || '')}</span></td>
+          <td data-label="Description"><small>${this.esc((f.desc_en || '').slice(0, 80))}${(f.desc_en || '').length > 80 ? '…' : ''}</small></td>
+          <td data-label="" class="td-actions">
             <button class="icon-btn" data-edit-festival="${f.id}" title="Edit">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
             </button>
@@ -264,6 +419,40 @@ const Admin = {
 
   bindFestivalUI() {
     document.getElementById('add-festival-btn').addEventListener('click', () => this.openFestivalModal());
+
+    // File picker → resized data URL → fill URL field + preview
+    const fileInput = document.getElementById('festival-image-file');
+    const urlInput = document.getElementById('festival-image-url');
+    const preview = document.getElementById('festival-image-preview');
+
+    const renderPreview = (src) => {
+      if (!src) { preview.innerHTML = ''; return; }
+      preview.innerHTML = `<img src="${this.esc(src)}" alt="preview"/>`;
+    };
+
+    if (fileInput) {
+      fileInput.addEventListener('change', async () => {
+        const file = fileInput.files && fileInput.files[0];
+        if (!file) return;
+        if (!file.type.startsWith('image/')) {
+          UI.toast('Please choose an image file', 'error');
+          fileInput.value = '';
+          return;
+        }
+        try {
+          const dataUrl = await this.resizeImage(file, 1200, 0.85);
+          urlInput.value = dataUrl;
+          renderPreview(dataUrl);
+        } catch (err) {
+          UI.toast('Could not read image', 'error');
+        }
+      });
+    }
+
+    if (urlInput) {
+      urlInput.addEventListener('input', () => renderPreview(urlInput.value.trim()));
+    }
+
     document.getElementById('festival-form').addEventListener('submit', e => {
       e.preventDefault();
       const fd = new FormData(e.target);
@@ -275,7 +464,8 @@ const Admin = {
         date_en: fd.get('date_en'),
         date_ml: fd.get('date_ml'),
         desc_en: fd.get('desc_en'),
-        desc_ml: fd.get('desc_ml')
+        desc_ml: fd.get('desc_ml'),
+        image: (fd.get('image') || '').trim()
       });
       UI.closeModal('festival-modal');
       UI.toast(id ? 'Festival updated' : 'Festival added', 'success');
@@ -283,9 +473,39 @@ const Admin = {
     });
   },
 
+  // Resize an image File via canvas → JPEG data URL (caps localStorage bloat)
+  resizeImage(file, maxWidth = 1200, quality = 0.85) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          const ratio = Math.min(1, maxWidth / img.width);
+          const w = Math.round(img.width * ratio);
+          const h = Math.round(img.height * ratio);
+          const canvas = document.createElement('canvas');
+          canvas.width = w;
+          canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL('image/jpeg', quality));
+        };
+        img.onerror = reject;
+        img.src = reader.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  },
+
   openFestivalModal(id) {
     const form = document.getElementById('festival-form');
     form.reset();
+    const fileInput = document.getElementById('festival-image-file');
+    const urlInput = document.getElementById('festival-image-url');
+    const preview = document.getElementById('festival-image-preview');
+    if (fileInput) fileInput.value = '';
+    if (preview) preview.innerHTML = '';
+
     if (id) {
       const f = Store.getFestivals().find(x => x.id === id);
       if (f) {
@@ -296,10 +516,13 @@ const Admin = {
         form.date_ml.value = f.date_ml || '';
         form.desc_en.value = f.desc_en || '';
         form.desc_ml.value = f.desc_ml || '';
+        if (urlInput) urlInput.value = f.image || '';
+        if (preview && f.image) preview.innerHTML = `<img src="${this.esc(f.image)}" alt="preview"/>`;
       }
       document.getElementById('festival-modal-title').textContent = 'Edit Festival';
     } else {
       form.id.value = '';
+      if (urlInput) urlInput.value = '';
       document.getElementById('festival-modal-title').textContent = 'Add Festival';
     }
     UI.openModal('festival-modal');
