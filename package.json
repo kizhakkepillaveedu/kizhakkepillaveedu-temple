@@ -4,7 +4,8 @@
   "description": "Kizhakke Pilla Veedu Sree Bhagavathi Temple — static site + Vercel serverless API + MongoDB",
   "private": true,
   "scripts": {
-    "dev": "npx serve family-temple",
+    "dev": "vercel dev",
+    "dev:static": "npx serve family-temple",
     "seed": "node scripts/seed-admin.mjs"
   },
   "dependencies": {
