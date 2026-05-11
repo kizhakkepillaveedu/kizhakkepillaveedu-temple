@@ -1,6 +1,30 @@
-/* Data layer — localStorage backed store for pujas, festivals, timings, bookings */
+/* Data layer — talks to the backend (/api/*) instead of localStorage.
+ *
+ * Public surface (mostly unchanged from the localStorage version, but methods are now async):
+ *   Store.init()                  — fetches /api/auth/me, caches current user, fetches Pujas list
+ *   Store.getCurrentUser()        — sync, returns the cached user
+ *   Store.isUserLoggedIn() / isAdmin()
+ *   Store.signupUser({...})       — POST /api/auth/signup
+ *   Store.loginUser(email, pwd)   — POST /api/auth/login
+ *   Store.logoutUser()            — POST /api/auth/logout
+ *
+ *   Store.getPujas()              — sync, returns the cached list (call refreshPujas to update)
+ *   Store.refreshPujas()          — GET /api/pujas → cache
+ *   Store.upsertPuja(p) / deletePuja(id)
+ *
+ *   Store.getFestivals() / refreshFestivals() / upsertFestival / deleteFestival
+ *   Store.getTimings()  / refreshTimings()  / saveTimings(list)
+ *
+ *   Store.getBookings()         — admin
+ *   Store.getUserBookings(uid)  — back-compat: ignores uid, uses ?scope=mine
+ *   Store.addBooking(b)
+ *   Store.updateBookingStatus(id, status)
+ *   Store.deleteBooking(id)
+ *
+ *   Store.addEnquiry(e) / getEnquiries()
+ */
 
-/* Nakshatram (birth star) list — 27 entries shared across booking + dashboard */
+/* ====================== Nakshatram (birth-star) constants — unchanged ====================== */
 const STARS = [
   { value: 'aswathy',       en: 'Aswathy',       ml: 'അശ്വതി' },
   { value: 'bharani',       en: 'Bharani',       ml: 'ഭരണി' },
@@ -51,8 +75,7 @@ const Stars = {
   }
 };
 
-/* ===== Security utilities ===== */
-
+/* ====================== Security utilities — kept for XSS-escape in render code ====================== */
 const Sec = {
   esc(s) {
     return String(s ?? '').replace(/[&<>"'`]/g, c => ({
@@ -70,396 +93,195 @@ const Sec = {
   }
 };
 
-const CryptoUtil = {
-  generateSalt() {
-    const arr = new Uint8Array(16);
-    crypto.getRandomValues(arr);
-    return Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('');
-  },
-  async hash(password, salt) {
-    const enc = new TextEncoder();
-    const data = enc.encode(`${salt}:${password}`);
-    const buf = await crypto.subtle.digest('SHA-256', data);
-    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+/* ====================== Tiny fetch helper ====================== */
+async function api(path, { method = 'GET', body } = {}) {
+  const opts = {
+    method,
+    credentials: 'same-origin',
+    headers: {}
+  };
+  if (body !== undefined) {
+    opts.headers['Content-Type'] = 'application/json';
+    opts.body = JSON.stringify(body);
   }
-};
-
-const RateLimit = {
-  KEY_PREFIX: 'kpv.rl.',
-  MAX_ATTEMPTS: 5,
-  WINDOW_MS: 5 * 60 * 1000,
-
-  _key(scope) { return this.KEY_PREFIX + scope; },
-
-  _read(scope) {
-    try {
-      const raw = localStorage.getItem(this._key(scope));
-      return raw ? JSON.parse(raw) : { count: 0, lockedUntil: 0 };
-    } catch { return { count: 0, lockedUntil: 0 }; }
-  },
-
-  _write(scope, val) {
-    localStorage.setItem(this._key(scope), JSON.stringify(val));
-  },
-
-  check(scope) {
-    const s = this._read(scope);
-    if (s.lockedUntil && s.lockedUntil > Date.now()) {
-      return { allowed: false, retryInSeconds: Math.ceil((s.lockedUntil - Date.now()) / 1000) };
-    }
-    return { allowed: true };
-  },
-
-  fail(scope) {
-    const s = this._read(scope);
-    s.count = (s.count || 0) + 1;
-    if (s.count >= this.MAX_ATTEMPTS) {
-      s.lockedUntil = Date.now() + this.WINDOW_MS;
-      s.count = 0;
-    }
-    this._write(scope, s);
-    return s;
-  },
-
-  reset(scope) {
-    localStorage.removeItem(this._key(scope));
+  let res, data;
+  try {
+    res = await fetch(path, opts);
+  } catch (e) {
+    return { ok: false, error: 'network', status: 0 };
   }
-};
-
-const STORE_KEYS = {
-  pujas: 'kpv.pujas',
-  festivals: 'kpv.festivals',
-  timings: 'kpv.timings',
-  bookings: 'kpv.bookings',
-  admin: 'kpv.admin',
-  users: 'kpv.users',
-  session: 'kpv.session',
-  enquiries: 'kpv.enquiries'
-};
-
-const DEFAULT_PUJAS = [
-  {
-    id: 'p1',
-    name_en: 'Pushpanjali',
-    name_ml: 'പുഷ്പാഞ്ജലി',
-    desc_en: 'Floral offering recited with mantras for blessings of prosperity and well-being.',
-    desc_ml: 'സമ്പത്തിനും ക്ഷേമത്തിനും വേണ്ടി മന്ത്രങ്ങളോടെ പൂക്കൾ അർച്ചിക്കുന്ന വഴിപാട്.',
-    price: 51
-  },
-  {
-    id: 'p2',
-    name_en: 'Bhagavathi Seva',
-    name_ml: 'ഭഗവതി സേവ',
-    desc_en: 'A grand puja dedicated to the Devi, performed with traditional offerings and lamps.',
-    desc_ml: 'ദേവിക്കുള്ള മഹാപൂജ. പരമ്പരാഗത നൈവേദ്യങ്ങളും ദീപങ്ങളും ഉപയോഗിച്ച് നടത്തുന്നു.',
-    price: 1001
-  },
-  {
-    id: 'p3',
-    name_en: 'Ganapathi Homam',
-    name_ml: 'ഗണപതി ഹോമം',
-    desc_en: 'Sacred fire ritual to remove obstacles and invoke divine grace before any new endeavour.',
-    desc_ml: 'വിഘ്നങ്ങൾ ഒഴിവാക്കാനും ഈശ്വരാനുഗ്രഹം നേടാനും നടത്തുന്ന ഹോമം.',
-    price: 501
-  },
-  {
-    id: 'p4',
-    name_en: 'Nei Vilakku',
-    name_ml: 'നെയ് വിളക്ക്',
-    desc_en: 'Lighting of the ghee lamp — a deeply revered offering for inner light and clarity.',
-    desc_ml: 'ഉള്ളിലെ പ്രകാശത്തിനായി തിളങ്ങുന്ന നെയ് വിളക്ക് സമർപ്പിക്കുന്ന വഴിപാട്.',
-    price: 21
-  },
-  {
-    id: 'p5',
-    name_en: 'Archana',
-    name_ml: 'അർച്ചന',
-    desc_en: 'Recital of the devotee\'s name and star with sacred chants and offerings.',
-    desc_ml: 'ഭക്തന്റെ പേരും നക്ഷത്രവും ചൊല്ലി മന്ത്രങ്ങളോടെ നടത്തുന്ന അർച്ചന.',
-    price: 31
-  },
-  {
-    id: 'p6',
-    name_en: 'Annadanam',
-    name_ml: 'അന്നദാനം',
-    desc_en: 'Sponsor a community feast — one of the most blessed offerings in our tradition.',
-    desc_ml: 'സമൂഹ ഭോജനം സ്‌പോൺസർ ചെയ്യുന്ന ഏറ്റവും പുണ്യകരമായ വഴിപാട്.',
-    price: 2501
+  try {
+    data = await res.json();
+  } catch {
+    data = {};
   }
-];
-
-const DEFAULT_FESTIVALS = [
-  {
-    id: 'f1',
-    name_en: 'Navarathri Mahotsavam',
-    name_ml: 'നവരാത്രി മഹോത്സവം',
-    date_en: 'Sept – Oct',
-    date_ml: 'കന്നി – തുലാം',
-    desc_en: 'Nine sacred nights celebrating the Devi in her divine forms with music and worship.',
-    desc_ml: 'ഒൻപത് രാത്രികൾ ദേവിയെ ആരാധിക്കുന്ന മഹോത്സവം.'
-  },
-  {
-    id: 'f2',
-    name_en: 'Vishu Vilakku',
-    name_ml: 'വിഷു വിളക്ക്',
-    date_en: 'Medam 1',
-    date_ml: 'മേടം 1',
-    desc_en: 'New year festival of light, prosperity and the Vishukkani darshan at dawn.',
-    desc_ml: 'പുതുവർഷ വിളക്കും വിഷുക്കണി ദർശനവുമായ പ്രഭാത ഉത്സവം.'
-  },
-  {
-    id: 'f3',
-    name_en: 'Mandala Pooja',
-    name_ml: 'മണ്ഡല പൂജ',
-    date_en: 'Vrischikam – Dhanu',
-    date_ml: 'വൃശ്ചികം – ധനു',
-    desc_en: '41 days of sacred discipline culminating in the grand Mandala Pooja celebration.',
-    desc_ml: '41 ദിവസത്തെ വ്രതാനുഷ്ഠാനത്തിന്റെ സമാപനത്തിലെ മഹാപൂജ.'
-  },
-  {
-    id: 'f4',
-    name_en: 'Pongala',
-    name_ml: 'പൊങ്കാല',
-    date_en: 'Makaram',
-    date_ml: 'മകരം',
-    desc_en: 'Devotees gather to offer the sacred pongala to the Devi with collective prayers.',
-    desc_ml: 'ഭക്തർ ഒത്തുചേർന്ന് ദേവിക്ക് സമർപ്പിക്കുന്ന പൊങ്കാല വഴിപാട്.'
+  if (!res.ok) {
+    return { ok: false, error: data.error || res.statusText || 'error', status: res.status, data };
   }
-];
+  return { ...data, ok: true, status: res.status };
+}
 
-const DEFAULT_TIMINGS = [
-  { day: 'mon', morning: '5:30 AM – 9:00 AM', evening: '5:30 PM – 7:30 PM' },
-  { day: 'tue', morning: '5:30 AM – 9:00 AM', evening: '5:30 PM – 7:30 PM' },
-  { day: 'wed', morning: '5:30 AM – 9:00 AM', evening: '5:30 PM – 7:30 PM' },
-  { day: 'thu', morning: '5:30 AM – 9:00 AM', evening: '5:30 PM – 7:30 PM' },
-  { day: 'fri', morning: '5:00 AM – 10:00 AM', evening: '5:00 PM – 8:30 PM' },
-  { day: 'sat', morning: '5:30 AM – 9:00 AM', evening: '5:30 PM – 7:30 PM' },
-  { day: 'sun', morning: '5:00 AM – 10:30 AM', evening: '5:00 PM – 8:00 PM' }
-];
-
+/* ====================== Store ====================== */
 const Store = {
-  uid() { return 'k' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); },
+  _currentUser: null,
+  _pujas: [],
+  _festivals: [],
+  _timings: [],
+  _ready: null,
 
-  read(key, fallback) {
-    try {
-      const raw = localStorage.getItem(key);
-      if (!raw) return fallback;
-      return JSON.parse(raw);
-    } catch { return fallback; }
-  },
-
-  write(key, value) {
-    localStorage.setItem(key, JSON.stringify(value));
-  },
-
+  /* ---------- Init: called once on every page load ---------- */
   init() {
-    if (!localStorage.getItem(STORE_KEYS.pujas)) this.write(STORE_KEYS.pujas, DEFAULT_PUJAS);
-    if (!localStorage.getItem(STORE_KEYS.festivals)) this.write(STORE_KEYS.festivals, DEFAULT_FESTIVALS);
-    if (!localStorage.getItem(STORE_KEYS.timings)) this.write(STORE_KEYS.timings, DEFAULT_TIMINGS);
-    if (!localStorage.getItem(STORE_KEYS.bookings)) this.write(STORE_KEYS.bookings, []);
-    if (!localStorage.getItem(STORE_KEYS.users)) this.write(STORE_KEYS.users, []);
-    if (!localStorage.getItem(STORE_KEYS.enquiries)) this.write(STORE_KEYS.enquiries, []);
-    this.ensureAdminUser();
+    if (this._ready) return this._ready;
+    this._ready = (async () => {
+      // Fetch session + reference data in parallel.
+      const [me, pujas, festivals, timings] = await Promise.all([
+        api('/api/auth/me'),
+        api('/api/pujas'),
+        api('/api/festivals'),
+        api('/api/timings')
+      ]);
+      if (me.ok) this._currentUser = me.user || null;
+      if (pujas.ok) this._pujas = (pujas.items || []).map(this._mapId);
+      if (festivals.ok) this._festivals = (festivals.items || []).map(this._mapId);
+      if (timings.ok) this._timings = timings.days || [];
+    })();
+    return this._ready;
   },
 
-  ensureAdminUser() {
-    const list = this.read(STORE_KEYS.users, []);
-    if (list.some(u => u.isAdmin)) return;
-    list.push({
-      id: 'admin-seed',
-      name: 'Temple Admin',
-      email: 'admin@temple.com',
-      phone: '',
-      password: 'admin123',
-      isAdmin: true,
-      createdAt: new Date().toISOString()
-    });
-    this.write(STORE_KEYS.users, list);
+  _mapId(doc) {
+    // Mongo returns `_id`; the existing UI expects `id`.
+    if (doc && doc._id && !doc.id) doc.id = String(doc._id);
+    return doc;
   },
 
-  /* ----- Pujas ----- */
-  getPujas() { return this.read(STORE_KEYS.pujas, []); },
-  savePujas(list) { this.write(STORE_KEYS.pujas, list); },
-  upsertPuja(puja) {
-    const list = this.getPujas();
-    if (puja.id) {
-      const idx = list.findIndex(p => p.id === puja.id);
-      if (idx >= 0) list[idx] = puja; else list.push(puja);
-    } else {
-      puja.id = this.uid();
-      list.push(puja);
-    }
-    this.savePujas(list);
-    return puja;
-  },
-  deletePuja(id) { this.savePujas(this.getPujas().filter(p => p.id !== id)); },
+  /* ---------- Auth ---------- */
+  getCurrentUser() { return this._currentUser; },
+  isUserLoggedIn() { return !!this._currentUser; },
+  isAdmin() { return !!(this._currentUser && this._currentUser.isAdmin); },
 
-  /* ----- Festivals ----- */
-  getFestivals() { return this.read(STORE_KEYS.festivals, []); },
-  saveFestivals(list) { this.write(STORE_KEYS.festivals, list); },
-  upsertFestival(item) {
-    const list = this.getFestivals();
-    if (item.id) {
-      const idx = list.findIndex(p => p.id === item.id);
-      if (idx >= 0) list[idx] = item; else list.push(item);
-    } else {
-      item.id = this.uid();
-      list.push(item);
-    }
-    this.saveFestivals(list);
-    return item;
-  },
-  deleteFestival(id) { this.saveFestivals(this.getFestivals().filter(f => f.id !== id)); },
-
-  /* ----- Timings ----- */
-  getTimings() { return this.read(STORE_KEYS.timings, DEFAULT_TIMINGS); },
-  saveTimings(list) { this.write(STORE_KEYS.timings, list); },
-
-  /* ----- Bookings ----- */
-  getBookings() { return this.read(STORE_KEYS.bookings, []); },
-  saveBookings(list) { this.write(STORE_KEYS.bookings, list); },
-  addBooking(booking) {
-    booking.id = this.uid();
-    booking.createdAt = new Date().toISOString();
-    booking.status = 'pending';
-    const list = this.getBookings();
-    list.unshift(booking);
-    this.saveBookings(list);
-    return booking;
-  },
-  updateBookingStatus(id, status) {
-    const list = this.getBookings();
-    const idx = list.findIndex(b => b.id === id);
-    if (idx >= 0) { list[idx].status = status; this.saveBookings(list); }
-  },
-  deleteBooking(id) { this.saveBookings(this.getBookings().filter(b => b.id !== id)); },
-  getUserBookings(userId) {
-    return this.getBookings().filter(b => b.userId === userId);
-  },
-  /* ----- Enquiries (contact form) ----- */
-  getEnquiries() { return this.read(STORE_KEYS.enquiries, []); },
-  addEnquiry({ name, email, subject, message }) {
-    const e = {
-      id: this.uid(),
-      name: Sec.trim(name, 80),
-      email: Sec.trim(email, 120).toLowerCase(),
-      subject: Sec.trim(subject, 40) || 'general',
-      message: Sec.trim(message, 1000),
-      createdAt: new Date().toISOString(),
-      status: 'new'
-    };
-    if (!e.name || !Sec.email(e.email) || !e.message) {
-      return { ok: false, error: 'invalid' };
-    }
-    const list = this.getEnquiries();
-    list.unshift(e);
-    this.write(STORE_KEYS.enquiries, list);
-    return { ok: true, enquiry: e };
-  },
-
-  generateReceipt() {
-    const d = new Date();
-    const yyyy = d.getFullYear();
-    const mm = String(d.getMonth() + 1).padStart(2, '0');
-    const dd = String(d.getDate()).padStart(2, '0');
-    const seq = String(this.getBookings().length + 1).padStart(4, '0');
-    return `KPV-${yyyy}${mm}${dd}-${seq}`;
-  },
-
-  /* ----- Users (devotee accounts) ----- */
-  getUsers() { return this.read(STORE_KEYS.users, []); },
-  saveUsers(list) { this.write(STORE_KEYS.users, list); },
-  findUserByEmail(email) {
-    const e = (email || '').trim().toLowerCase();
-    return this.getUsers().find(u => u.email === e) || null;
-  },
   async signupUser({ name, email, phone, password }) {
-    const cleanName = Sec.trim(name, 80);
-    const e = Sec.trim(email, 120).toLowerCase();
-    const cleanPhone = Sec.trim(phone, 20);
-    if (!cleanName || !e || !password) return { ok: false, error: 'missing' };
-    if (!Sec.email(e)) return { ok: false, error: 'badEmail' };
-    if (cleanPhone && !Sec.phone(cleanPhone)) return { ok: false, error: 'badPhone' };
-    if (String(password).length < 6) return { ok: false, error: 'weakPassword' };
-    if (this.findUserByEmail(e)) return { ok: false, error: 'exists' };
-
-    const salt = CryptoUtil.generateSalt();
-    const passwordHash = await CryptoUtil.hash(password, salt);
-    const user = {
-      id: this.uid(),
-      name: cleanName,
-      email: e,
-      phone: cleanPhone,
-      salt,
-      passwordHash,
-      isAdmin: false,
-      createdAt: new Date().toISOString()
-    };
-    const list = this.getUsers();
-    list.push(user);
-    this.saveUsers(list);
-    sessionStorage.setItem(STORE_KEYS.session, user.id);
-    return { ok: true, user };
+    const r = await api('/api/auth/signup', {
+      method: 'POST',
+      body: { name, email, phone, password }
+    });
+    if (!r.ok) return { ok: false, error: r.error };
+    this._currentUser = r.user;
+    return { ok: true, user: r.user };
   },
 
   async loginUser(email, password) {
-    const e = Sec.trim(email, 120).toLowerCase();
-    const scope = 'login:' + e;
-    const gate = RateLimit.check(scope);
-    if (!gate.allowed) {
-      return { ok: false, error: 'locked', retryInSeconds: gate.retryInSeconds };
-    }
-
-    const u = this.findUserByEmail(e);
-    if (!u) {
-      RateLimit.fail(scope);
-      return { ok: false, error: 'invalid' };
-    }
-
-    let valid = false;
-
-    // New (hashed) credentials
-    if (u.salt && u.passwordHash) {
-      const hash = await CryptoUtil.hash(password, u.salt);
-      valid = (hash === u.passwordHash);
-    }
-    // Legacy (plaintext) — verify, then migrate to hashed
-    if (!valid && typeof u.password === 'string' && u.password.length > 0) {
-      if (u.password === password) {
-        const salt = CryptoUtil.generateSalt();
-        const passwordHash = await CryptoUtil.hash(password, salt);
-        u.salt = salt;
-        u.passwordHash = passwordHash;
-        delete u.password;
-        const list = this.getUsers().map(x => x.id === u.id ? u : x);
-        this.saveUsers(list);
-        valid = true;
-      }
-    }
-
-    if (!valid) {
-      RateLimit.fail(scope);
-      return { ok: false, error: 'invalid' };
-    }
-
-    RateLimit.reset(scope);
-    sessionStorage.setItem(STORE_KEYS.session, u.id);
-    return { ok: true, user: u };
+    const r = await api('/api/auth/login', { method: 'POST', body: { email, password } });
+    if (!r.ok) return { ok: false, error: r.error };
+    this._currentUser = r.user;
+    return { ok: true, user: r.user };
   },
-  logoutUser() { sessionStorage.removeItem(STORE_KEYS.session); },
-  getCurrentUser() {
-    const id = sessionStorage.getItem(STORE_KEYS.session);
-    if (!id) return null;
-    return this.getUsers().find(u => u.id === id) || null;
-  },
-  isUserLoggedIn() { return !!this.getCurrentUser(); },
 
-  /* ----- Admin auth — derived from the current user's isAdmin flag ----- */
-  isAdmin() {
-    const u = this.getCurrentUser();
-    return !!(u && u.isAdmin);
+  async logoutUser() {
+    await api('/api/auth/logout', { method: 'POST' });
+    this._currentUser = null;
   },
-  logoutAdmin() { this.logoutUser(); }
+
+  /* ---------- Pujas ---------- */
+  getPujas() { return this._pujas.slice(); },
+  async refreshPujas() {
+    const r = await api('/api/pujas');
+    if (r.ok) this._pujas = (r.items || []).map(this._mapId);
+    return this._pujas;
+  },
+  async upsertPuja(puja) {
+    let r;
+    if (puja.id) {
+      r = await api(`/api/pujas/${puja.id}`, {
+        method: 'PUT',
+        body: {
+          name_en: puja.name_en, name_ml: puja.name_ml,
+          desc_en: puja.desc_en, desc_ml: puja.desc_ml,
+          price: puja.price
+        }
+      });
+    } else {
+      r = await api('/api/pujas', { method: 'POST', body: puja });
+    }
+    if (r.ok) await this.refreshPujas();
+    return r;
+  },
+  async deletePuja(id) {
+    const r = await api(`/api/pujas/${id}`, { method: 'DELETE' });
+    if (r.ok) await this.refreshPujas();
+    return r;
+  },
+
+  /* ---------- Festivals ---------- */
+  getFestivals() { return this._festivals.slice(); },
+  async refreshFestivals() {
+    const r = await api('/api/festivals');
+    if (r.ok) this._festivals = (r.items || []).map(this._mapId);
+    return this._festivals;
+  },
+  async upsertFestival(item) {
+    let r;
+    if (item.id) {
+      r = await api(`/api/festivals/${item.id}`, { method: 'PUT', body: item });
+    } else {
+      r = await api('/api/festivals', { method: 'POST', body: item });
+    }
+    if (r.ok) await this.refreshFestivals();
+    return r;
+  },
+  async deleteFestival(id) {
+    const r = await api(`/api/festivals/${id}`, { method: 'DELETE' });
+    if (r.ok) await this.refreshFestivals();
+    return r;
+  },
+
+  /* ---------- Timings ---------- */
+  getTimings() { return this._timings.slice(); },
+  async refreshTimings() {
+    const r = await api('/api/timings');
+    if (r.ok) this._timings = r.days || [];
+    return this._timings;
+  },
+  async saveTimings(list) {
+    const r = await api('/api/timings', { method: 'PUT', body: { days: list } });
+    if (r.ok) this._timings = r.days || [];
+    return r;
+  },
+
+  /* ---------- Bookings ---------- */
+  async getBookings() {
+    const r = await api('/api/bookings');
+    return r.ok ? (r.items || []).map(this._mapId) : [];
+  },
+  async getUserBookings(/* uid — ignored, server uses session */) {
+    const r = await api('/api/bookings?scope=mine');
+    return r.ok ? (r.items || []).map(this._mapId) : [];
+  },
+  async addBooking(booking) {
+    const r = await api('/api/bookings', { method: 'POST', body: booking });
+    if (r.ok && r.booking) r.booking = this._mapId(r.booking);
+    return r;
+  },
+  async updateBookingStatus(id, status) {
+    return api(`/api/bookings/${id}`, { method: 'PATCH', body: { status } });
+  },
+  async deleteBooking(id) {
+    return api(`/api/bookings/${id}`, { method: 'DELETE' });
+  },
+
+  /* ---------- Enquiries (contact form) ---------- */
+  async addEnquiry(payload) {
+    const r = await api('/api/enquiries', { method: 'POST', body: payload });
+    return r.ok ? { ok: true, enquiry: r.enquiry } : { ok: false, error: r.error };
+  },
+  async getEnquiries() {
+    const r = await api('/api/enquiries');
+    return r.ok ? r.items || [] : [];
+  },
+
+  /* ---------- Receipt generator no longer needed client-side (server-issued) ---------- */
+  generateReceipt() { return ''; }
 };
 
+// Kick off the initial load as soon as the script is parsed. Pages can `await Store.init()`
+// before using cached data, or just rely on the promise resolving by the time DOMContentLoaded fires.
 Store.init();

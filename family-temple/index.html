@@ -830,26 +830,34 @@
       bindContactForm() {
         const form = document.getElementById('contact-form');
         if (!form) return;
-        form.addEventListener('submit', e => {
+        form.addEventListener('submit', async e => {
           e.preventDefault();
-          const fd = new FormData(form);
-          const r = Store.addEnquiry({
-            name: fd.get('name'),
-            email: fd.get('email'),
-            subject: fd.get('subject'),
-            message: fd.get('message')
-          });
-          if (!r.ok) {
-            const errKey = !Sec.email((fd.get('email') || '').trim()) ? 'contact.err.email' : 'contact.err.required';
-            UI.toast(I18N.t(errKey), 'error');
-            return;
+          const submitBtn = form.querySelector('button[type="submit"]');
+          if (submitBtn) submitBtn.disabled = true;
+          try {
+            const fd = new FormData(form);
+            const r = await Store.addEnquiry({
+              name: fd.get('name'),
+              email: fd.get('email'),
+              subject: fd.get('subject'),
+              message: fd.get('message')
+            });
+            if (!r.ok) {
+              const errKey = !Sec.email((fd.get('email') || '').trim()) ? 'contact.err.email' : 'contact.err.required';
+              UI.toast(I18N.t(errKey), 'error');
+              return;
+            }
+            UI.toast(I18N.t('contact.success'), 'success');
+            form.reset();
+          } finally {
+            if (submitBtn) submitBtn.disabled = false;
           }
-          UI.toast(I18N.t('contact.success'), 'success');
-          form.reset();
         });
       },
 
-      init() {
+      async init() {
+        // Wait for session + reference data (pujas / festivals / timings) to load.
+        await Store.init();
         this.renderAll();
         this.bindHistoryModal();
         this.bindContactForm();

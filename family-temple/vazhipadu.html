@@ -222,8 +222,9 @@
   <script src="js/layout.js"></script>
   <script src="js/main.js"></script>
   <script>
-    (function () {
-      // Auth gate
+    (async function () {
+      // Wait for session check before deciding to gate the page.
+      await Store.init();
       if (!Store.isUserLoggedIn()) {
         window.location.href = 'login.html?next=vazhipadu.html';
         return;
@@ -233,8 +234,11 @@
         pujas: [],
         pendingBooking: null,
 
-        init() {
+        async init() {
+          // Pujas were cached by Store.init(); refresh in the background
+          // to make sure we have the latest prices.
           this.pujas = Store.getPujas();
+          if (!this.pujas.length) this.pujas = await Store.refreshPujas();
           this.populatePrimarySelect();
           this.populateStarSelects();
           this.bindEvents();
@@ -449,24 +453,24 @@
           UI.openModal('payment-modal');
         },
 
-        completePayment(method) {
+        async completePayment(method) {
           if (!this.pendingBooking) return;
-          const user = Store.getCurrentUser();
-          const receipt = Store.generateReceipt();
-          const paid = method === 'online';
-
-          const saved = Store.addBooking({
-            userId: user ? user.id : null,
-            ...this.pendingBooking,
-            payment: {
-              method,
-              status: paid ? 'paid' : 'pending_counter',
-              receipt
+          const submitBtn = document.getElementById('submit-booking');
+          if (submitBtn) submitBtn.disabled = true;
+          try {
+            const r = await Store.addBooking({
+              ...this.pendingBooking,
+              payment: { method }
+            });
+            if (!r.ok || !r.booking) {
+              UI.toast(I18N.t('booking.err.empty'), 'error');
+              return;
             }
-          });
-
-          UI.closeModal('payment-modal');
-          this.showReceipt(saved, method);
+            UI.closeModal('payment-modal');
+            this.showReceipt(r.booking, method);
+          } finally {
+            if (submitBtn) submitBtn.disabled = false;
+          }
         },
 
         showReceipt(booking, method) {
@@ -480,7 +484,9 @@
         }
       };
 
-      document.addEventListener('DOMContentLoaded', () => Booking.init());
+      // Script is at the end of <body>, so the DOM is already parsed —
+      // just init directly. Errors are surfaced to the console.
+      Booking.init().catch(err => console.error('[booking init]', err));
     })();
   </script>
 </body>

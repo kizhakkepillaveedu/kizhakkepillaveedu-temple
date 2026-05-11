@@ -71,7 +71,7 @@
   <script src="js/layout.js"></script>
   <script src="js/main.js"></script>
   <script>
-    (function () {
+    (async function () {
       const params = new URLSearchParams(location.search);
       const safeNext = (val) => {
         const allowed = ['vazhipadu.html', 'index.html', 'admin.html'];
@@ -84,7 +84,8 @@
         return requestedNext || 'vazhipadu.html';
       };
 
-      // If already logged in, send to appropriate destination
+      // Wait for the session check before deciding whether to auto-redirect.
+      await Store.init();
       const existing = Store.getCurrentUser();
       if (existing) {
         window.location.href = destination(existing);

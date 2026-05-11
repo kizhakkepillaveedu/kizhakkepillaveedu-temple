@@ -1,11 +1,19 @@
 {
-  "name": "family-temple-project",
+  "name": "kizhakkepillaveedu-temple",
   "version": "1.0.0",
-  "description": "Family Temple Website",
-  "main": "index.html",
+  "description": "Kizhakke Pilla Veedu Sree Bhagavathi Temple — static site + Vercel serverless API + MongoDB",
+  "private": true,
   "scripts": {
-    "dev": "npx serve family-temple"
+    "dev": "npx serve family-temple",
+    "seed": "node scripts/seed-admin.mjs"
   },
-  "author": "",
-  "license": "ISC"
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cookie": "^0.6.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.5.1"
+  },
+  "engines": {
+    "node": ">=18"
+  }
 }

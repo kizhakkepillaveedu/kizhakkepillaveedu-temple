@@ -148,6 +148,24 @@ const Layout = {
       footerHost.outerHTML = this.isAdminLayout() ? '' : this.footer();
     }
     document.body.insertAdjacentHTML('beforeend', this.scrollTopBtn());
+
+    // Auth buttons render BEFORE Store.init() finishes, so they default to the
+    // logged-out state. Once the session check resolves, swap the contents in
+    // place without re-rendering the whole header.
+    if (typeof Store !== 'undefined' && Store._ready) {
+      Store._ready.then(() => {
+        const slot = document.querySelector('.auth-actions');
+        if (slot) slot.innerHTML = this.authButtons();
+        const navAuth = document.querySelector('.nav .nav-link-auth');
+        if (navAuth && navAuth.parentNode) {
+          const wrapper = document.createElement('template');
+          wrapper.innerHTML = this.navAuthLink().trim();
+          navAuth.parentNode.replaceChild(wrapper.content.firstChild, navAuth);
+        }
+        // Re-translate any newly-injected data-i18n nodes
+        if (typeof I18N !== 'undefined' && I18N.apply) I18N.apply();
+      });
+    }
   }
 };
 

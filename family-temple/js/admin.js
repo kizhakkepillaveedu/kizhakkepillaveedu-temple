@@ -1,8 +1,14 @@
 /* Admin panel logic — auth, tabs, CRUD on pujas/festivals/timings, bookings management */
 
 const Admin = {
-  init() {
-    // Auth gate: only admins can be here
+  // Local cache for the bookings list — populated on every dashboard/bookings render
+  // so that openBookingDetail() can resolve from memory.
+  _bookings: [],
+
+  async init() {
+    // Wait for /api/auth/me to settle before checking the role.
+    await Store.init();
+
     if (!Store.isUserLoggedIn()) {
       window.location.href = 'login.html?next=admin.html';
       return;
@@ -55,8 +61,8 @@ const Admin = {
   bindLogout() {
     const btn = document.getElementById('logout-btn');
     if (!btn) return;
-    btn.addEventListener('click', () => {
-      Store.logoutUser();
+    btn.addEventListener('click', async () => {
+      await Store.logoutUser();
       window.location.href = 'index.html';
     });
   },
@@ -92,11 +98,11 @@ const Admin = {
   },
 
   /* ----- Dashboard ----- */
-  renderDashboard() {
-    const bookings = Store.getBookings();
-    const pending = bookings.filter(b => b.status === 'pending').length;
+  async renderDashboard() {
+    this._bookings = await Store.getBookings();
+    const pending = this._bookings.filter(b => b.status === 'pending').length;
     const stats = [
-      { label: I18N.t('admin.stats.bookings'), value: bookings.length, gold: true },
+      { label: I18N.t('admin.stats.bookings'), value: this._bookings.length, gold: true },
       { label: I18N.t('admin.stats.pending'), value: pending },
       { label: I18N.t('admin.stats.pujas'), value: Store.getPujas().length },
       { label: I18N.t('admin.stats.festivals'), value: Store.getFestivals().length }
@@ -107,13 +113,14 @@ const Admin = {
         <div class="stat-value ${s.gold ? 'gold' : ''}">${s.value}</div>
       </div>
     `).join('');
-    document.getElementById('recent-bookings').innerHTML = this.bookingsTable(bookings.slice(0, 5));
+    document.getElementById('recent-bookings').innerHTML = this.bookingsTable(this._bookings.slice(0, 5));
     this.bindBookingActions(document.getElementById('recent-bookings'));
   },
 
   /* ----- Bookings ----- */
-  renderBookings() {
-    document.getElementById('bookings-list').innerHTML = this.bookingsTable(Store.getBookings());
+  async renderBookings() {
+    this._bookings = await Store.getBookings();
+    document.getElementById('bookings-list').innerHTML = this.bookingsTable(this._bookings);
     this.bindBookingActions(document.getElementById('bookings-list'));
   },
 
@@ -181,19 +188,19 @@ const Admin = {
 
   bindBookingActions(scope) {
     scope.querySelectorAll('.status-select').forEach(sel => {
-      sel.addEventListener('change', e => {
+      sel.addEventListener('change', async e => {
         e.stopPropagation();
-        Store.updateBookingStatus(sel.dataset.id, sel.value);
+        await Store.updateBookingStatus(sel.dataset.id, sel.value);
         UI.toast('Status updated', 'success');
         this.renderActiveTab();
       });
       sel.addEventListener('click', e => e.stopPropagation());
     });
     scope.querySelectorAll('[data-del-booking]').forEach(btn => {
-      btn.addEventListener('click', e => {
+      btn.addEventListener('click', async e => {
         e.stopPropagation();
         if (!confirm(I18N.t('admin.delete.confirm'))) return;
-        Store.deleteBooking(btn.dataset.delBooking);
+        await Store.deleteBooking(btn.dataset.delBooking);
         this.renderActiveTab();
       });
     });
@@ -203,7 +210,7 @@ const Admin = {
   },
 
   openBookingDetail(id) {
-    const b = Store.getBookings().find(x => x.id === id);
+    const b = (this._bookings || []).find(x => x.id === id);
     if (!b) return;
     const contact = b.contact || {};
     const pay = b.payment || {};
@@ -332,20 +339,20 @@ const Admin = {
     </tbody></table></div>`;
 
     document.querySelectorAll('[data-edit-puja]').forEach(b => b.addEventListener('click', () => this.openPujaModal(b.dataset.editPuja)));
-    document.querySelectorAll('[data-del-puja]').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('[data-del-puja]').forEach(b => b.addEventListener('click', async () => {
       if (!confirm(I18N.t('admin.delete.confirm'))) return;
-      Store.deletePuja(b.dataset.delPuja);
+      await Store.deletePuja(b.dataset.delPuja);
       this.renderActiveTab();
     }));
   },
 
   bindPujaUI() {
     document.getElementById('add-puja-btn').addEventListener('click', () => this.openPujaModal());
-    document.getElementById('puja-form').addEventListener('submit', e => {
+    document.getElementById('puja-form').addEventListener('submit', async e => {
       e.preventDefault();
       const fd = new FormData(e.target);
       const id = fd.get('id') || undefined;
-      Store.upsertPuja({
+      const r = await Store.upsertPuja({
         id,
         name_en: fd.get('name_en'),
         name_ml: fd.get('name_ml'),
@@ -353,6 +360,7 @@ const Admin = {
         desc_ml: fd.get('desc_ml'),
         price: Number(fd.get('price'))
       });
+      if (!r.ok) { UI.toast('Save failed', 'error'); return; }
       UI.closeModal('puja-modal');
       UI.toast(id ? 'Puja updated' : 'Puja added', 'success');
       this.renderActiveTab();
@@ -410,9 +418,9 @@ const Admin = {
     </tbody></table></div>`;
 
     document.querySelectorAll('[data-edit-festival]').forEach(b => b.addEventListener('click', () => this.openFestivalModal(b.dataset.editFestival)));
-    document.querySelectorAll('[data-del-festival]').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('[data-del-festival]').forEach(b => b.addEventListener('click', async () => {
       if (!confirm(I18N.t('admin.delete.confirm'))) return;
-      Store.deleteFestival(b.dataset.delFestival);
+      await Store.deleteFestival(b.dataset.delFestival);
       this.renderActiveTab();
     }));
   },
@@ -440,11 +448,24 @@ const Admin = {
           return;
         }
         try {
-          const dataUrl = await this.resizeImage(file, 1200, 0.85);
-          urlInput.value = dataUrl;
-          renderPreview(dataUrl);
+          // Resize via canvas to keep the upload small, then POST to the images API.
+          // Bytes are stored as a Buffer in the `images` collection in MongoDB,
+          // and only the /api/images/<id> URL ends up in the festival doc.
+          const dataUrl = await this.resizeImage(file, 1600, 0.85);
+          const r = await fetch('/api/images', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify({ dataUri: dataUrl, source: 'festival' })
+          });
+          const data = await r.json();
+          if (!r.ok || !data.ok || !data.url) {
+            throw new Error(data.error || 'upload_failed');
+          }
+          urlInput.value = data.url;
+          renderPreview(data.url);
         } catch (err) {
-          UI.toast('Could not read image', 'error');
+          UI.toast('Could not upload image: ' + (err.message || 'error'), 'error');
         }
       });
     }
@@ -453,11 +474,11 @@ const Admin = {
       urlInput.addEventListener('input', () => renderPreview(urlInput.value.trim()));
     }
 
-    document.getElementById('festival-form').addEventListener('submit', e => {
+    document.getElementById('festival-form').addEventListener('submit', async e => {
       e.preventDefault();
       const fd = new FormData(e.target);
       const id = fd.get('id') || undefined;
-      Store.upsertFestival({
+      const r = await Store.upsertFestival({
         id,
         name_en: fd.get('name_en'),
         name_ml: fd.get('name_ml'),
@@ -467,6 +488,7 @@ const Admin = {
         desc_ml: fd.get('desc_ml'),
         image: (fd.get('image') || '').trim()
       });
+      if (!r.ok) { UI.toast('Save failed', 'error'); return; }
       UI.closeModal('festival-modal');
       UI.toast(id ? 'Festival updated' : 'Festival added', 'success');
       this.renderActiveTab();
@@ -550,13 +572,14 @@ const Admin = {
         <button class="btn btn-primary" id="save-timings"><span data-i18n="admin.save">Save</span></button>
       </div>
     `;
-    document.getElementById('save-timings').addEventListener('click', () => {
+    document.getElementById('save-timings').addEventListener('click', async () => {
       const updated = Store.getTimings().map((t, idx) => ({
         day: t.day,
         morning: document.querySelector(`input[data-timing-idx="${idx}"][data-field="morning"]`).value.trim(),
         evening: document.querySelector(`input[data-timing-idx="${idx}"][data-field="evening"]`).value.trim()
       }));
-      Store.saveTimings(updated);
+      const r = await Store.saveTimings(updated);
+      if (!r.ok) { UI.toast('Save failed', 'error'); return; }
       UI.toast('Timings saved', 'success');
     });
   },

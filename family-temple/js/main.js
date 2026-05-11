@@ -9,11 +9,13 @@ const UI = {
   },
 
   bindLogout() {
-    document.addEventListener('click', e => {
+    document.addEventListener('click', async e => {
       const btn = e.target.closest('.js-logout');
       if (!btn) return;
       e.preventDefault();
-      if (typeof Store !== 'undefined' && Store.logoutUser) Store.logoutUser();
+      if (typeof Store !== 'undefined' && Store.logoutUser) {
+        try { await Store.logoutUser(); } catch {}
+      }
       window.location.href = 'index.html';
     });
   },
