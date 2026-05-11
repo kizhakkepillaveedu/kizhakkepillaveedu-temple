@@ -2445,6 +2445,33 @@ body[data-lang="ml"] .history-modal-content p {
 .auth-form .form-field { margin-bottom: 14px; }
 .auth-form .btn { margin-top: 6px; }
 
+/* Continue with Google button (rendered by Google Identity Services) */
+.google-signin-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 8px;
+  min-height: 44px; /* reserve space so layout doesn't jump while GIS loads */
+}
+
+/* "or" divider between Google sign-in and email/password */
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0 18px;
+  color: var(--color-text-muted);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--color-border);
+}
+
 .auth-error {
   display: none;
   color: #b91c1c;

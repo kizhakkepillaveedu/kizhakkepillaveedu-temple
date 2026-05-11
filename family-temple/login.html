@@ -8,6 +8,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&family=Noto+Sans+Malayalam:wght@400;500;600;700&family=Noto+Serif+Malayalam:wght@500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
+  <!-- Google Identity Services library (renders the Continue-with-Google button) -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body data-lang="ml">
   <div id="layout-header"></div>
@@ -22,6 +24,14 @@
       </div>
       <h2 data-i18n="auth.title">Welcome to the Temple</h2>
       <p class="hint" data-i18n="auth.sub">Sign in or create an account to book vazhipadu.</p>
+
+      <!-- Google Sign-In button — rendered by the GIS library on load -->
+      <div class="google-signin-wrap">
+        <div id="google-signin-btn"></div>
+      </div>
+      <p class="auth-error" id="google-err" data-i18n="auth.err.googleFailed">Google sign-in failed. Please try again.</p>
+
+      <div class="auth-divider"><span data-i18n="auth.or">or</span></div>
 
       <div class="auth-tabs">
         <button class="auth-tab active" data-tab="login" data-i18n="auth.tab.login">Login</button>
@@ -91,6 +101,52 @@
         window.location.href = destination(existing);
         return;
       }
+
+      /* ===================== Google Sign-In ===================== */
+      const GOOGLE_CLIENT_ID = '291408759953-hnub57gg3e3g9vqhtu44cm9hj164961d.apps.googleusercontent.com';
+
+      const handleGoogleCredential = async (response) => {
+        const errEl = document.getElementById('google-err');
+        errEl.style.display = 'none';
+        try {
+          const r = await Store.googleLogin(response.credential);
+          if (!r.ok) {
+            errEl.textContent = I18N.t('auth.err.googleFailed');
+            errEl.style.display = 'block';
+            return;
+          }
+          window.location.href = destination(r.user);
+        } catch (e) {
+          errEl.textContent = I18N.t('auth.err.googleFailed');
+          errEl.style.display = 'block';
+        }
+      };
+
+      // The GIS library may load after this script runs, so poll briefly.
+      const setupGoogle = () => {
+        if (!window.google || !window.google.accounts || !window.google.accounts.id) {
+          return setTimeout(setupGoogle, 100);
+        }
+        window.google.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          callback: handleGoogleCredential,
+          ux_mode: 'popup',
+          auto_select: false
+        });
+        const btn = document.getElementById('google-signin-btn');
+        if (btn) {
+          window.google.accounts.id.renderButton(btn, {
+            type: 'standard',
+            theme: 'outline',
+            size: 'large',
+            shape: 'pill',
+            text: 'continue_with',
+            logo_alignment: 'left',
+            width: Math.min(btn.parentElement.offsetWidth || 320, 360)
+          });
+        }
+      };
+      setupGoogle();
 
       const tabs = document.querySelectorAll('.auth-tab');
       const loginForm = document.getElementById('login-form');

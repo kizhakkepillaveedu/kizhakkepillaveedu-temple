@@ -9,11 +9,23 @@ const UserSchema = new mongoose.Schema(
     name: { type: String, required: true, trim: true, maxlength: 80 },
     email: { type: String, required: true, unique: true, lowercase: true, trim: true, maxlength: 120 },
     phone: { type: String, default: '', trim: true, maxlength: 20 },
-    passwordHash: { type: String, required: true },
+    // Either passwordHash (email/password sign-in) or googleId (Google sign-in) must be present.
+    passwordHash: { type: String, default: '' },
+    googleId: { type: String, default: '', index: true, sparse: true },
+    avatar: { type: String, default: '' },
     role: { type: String, enum: ['user', 'admin'], default: 'user' }
   },
   { timestamps: true }
 );
+
+// At least one auth method must be set
+UserSchema.pre('validate', function (next) {
+  if (!this.passwordHash && !this.googleId) {
+    next(new Error('User must have either a password or a googleId'));
+  } else {
+    next();
+  }
+});
 
 UserSchema.methods.toClient = function () {
   return {
@@ -21,8 +33,10 @@ UserSchema.methods.toClient = function () {
     name: this.name,
     email: this.email,
     phone: this.phone,
+    avatar: this.avatar,
     role: this.role,
     isAdmin: this.role === 'admin',
+    hasGoogle: !!this.googleId,
     createdAt: this.createdAt
   };
 };

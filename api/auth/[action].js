@@ -85,6 +85,92 @@ async function handleLogout(req, res) {
   });
 }
 
+/* ====================== Google Sign-In ======================
+ * Verifies the ID token returned by Google Identity Services (GIS),
+ * then finds-or-creates the user in MongoDB.
+ *
+ * Verification strategy: call Google's `tokeninfo` endpoint. Google
+ * does all the JWT signature/expiry checks for us and returns the
+ * decoded claims. No extra dependency (no `google-auth-library`).
+ */
+async function handleGoogle(req, res) {
+  return method(req, res, {
+    POST: async () => {
+      try {
+        const CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+        if (!CLIENT_ID) {
+          return res.status(500).json({ ok: false, error: 'google_not_configured' });
+        }
+
+        const body = await readJson(req);
+        let info;
+
+        // Path A — ID token from `google.accounts.id` (rendered button flow)
+        if (body.credential) {
+          const r = await fetch(
+            `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(body.credential)}`
+          );
+          info = await r.json();
+          if (!r.ok || !info.sub) return res.status(401).json({ ok: false, error: 'invalid_token' });
+          if (info.aud !== CLIENT_ID) return res.status(401).json({ ok: false, error: 'wrong_audience' });
+          if (info.iss !== 'accounts.google.com' && info.iss !== 'https://accounts.google.com') {
+            return res.status(401).json({ ok: false, error: 'wrong_issuer' });
+          }
+        }
+        // Path B — OAuth access token from `google.accounts.oauth2.initTokenClient`
+        // (programmatic flow, used when our own custom button is clicked).
+        else if (body.accessToken) {
+          const r = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+            headers: { Authorization: `Bearer ${body.accessToken}` }
+          });
+          info = await r.json();
+          if (!r.ok || !info.sub) return res.status(401).json({ ok: false, error: 'invalid_token' });
+        } else {
+          return send400(res, 'noCredential');
+        }
+
+        if (info.email_verified !== 'true' && info.email_verified !== true) {
+          return res.status(401).json({ ok: false, error: 'email_not_verified' });
+        }
+
+        await dbConnect();
+        const email = String(info.email).toLowerCase();
+        const googleId = String(info.sub);
+        const displayName = clean(info.name || email.split('@')[0], 80);
+        const avatar = String(info.picture || '').slice(0, 500);
+        const ADMIN_EMAIL = String(process.env.ADMIN_EMAIL || '').toLowerCase().trim();
+
+        // Match by googleId first (most reliable), then fall back to email
+        // so existing email/password accounts get linked rather than duplicated.
+        let user = await User.findOne({ googleId });
+        if (!user) user = await User.findOne({ email });
+
+        if (user) {
+          let changed = false;
+          if (!user.googleId) { user.googleId = googleId; changed = true; }
+          if (!user.avatar && avatar) { user.avatar = avatar; changed = true; }
+          if (!user.name && displayName) { user.name = displayName; changed = true; }
+          // Auto-promote whoever signs in with the configured admin Gmail
+          if (ADMIN_EMAIL && email === ADMIN_EMAIL && user.role !== 'admin') {
+            user.role = 'admin';
+            changed = true;
+          }
+          if (changed) await user.save();
+        } else {
+          const role = ADMIN_EMAIL && email === ADMIN_EMAIL ? 'admin' : 'user';
+          user = await User.create({ name: displayName, email, googleId, avatar, role });
+        }
+
+        const token = signToken({ uid: user._id.toString(), role: user.role });
+        setAuthCookie(res, token);
+        return res.status(200).json({ ok: true, user: user.toClient() });
+      } catch (err) {
+        return send500(res, err);
+      }
+    }
+  });
+}
+
 /* ====================== Me ====================== */
 async function handleMe(req, res) {
   return method(req, res, {
@@ -116,6 +202,7 @@ export default async function handler(req, res) {
     case 'login':  return handleLogin(req, res);
     case 'logout': return handleLogout(req, res);
     case 'me':     return handleMe(req, res);
+    case 'google': return handleGoogle(req, res);
     default:
       return res.status(404).json({ ok: false, error: 'unknown_action' });
   }

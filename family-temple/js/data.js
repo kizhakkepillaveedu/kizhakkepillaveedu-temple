@@ -176,6 +176,23 @@ const Store = {
     return { ok: true, user: r.user };
   },
 
+  async googleLogin(payload) {
+    // Accepts:
+    //   - a string (ID token)         → { credential: string }
+    //   - { credential: string }      → ID-token flow
+    //   - { accessToken: string }     → OAuth access-token flow
+    let body;
+    if (typeof payload === 'string')           body = { credential: payload };
+    else if (payload && payload.credential)    body = { credential: payload.credential };
+    else if (payload && payload.accessToken)   body = { accessToken: payload.accessToken };
+    else return { ok: false, error: 'noCredential' };
+
+    const r = await api('/api/auth/google', { method: 'POST', body });
+    if (!r.ok) return { ok: false, error: r.error };
+    this._currentUser = r.user;
+    return { ok: true, user: r.user };
+  },
+
   async logoutUser() {
     await api('/api/auth/logout', { method: 'POST' });
     this._currentUser = null;

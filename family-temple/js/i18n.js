@@ -60,6 +60,8 @@ const TRANSLATIONS = {
     'auth.err.badEmail': 'Please enter a valid email address.',
     'auth.err.badPhone': 'Please enter a valid phone number.',
     'auth.err.weakPassword': 'Password must be at least 6 characters.',
+    'auth.err.googleFailed': 'Google sign-in failed. Please try again.',
+    'auth.or': 'or',
 
     'booking.primary.title': 'Primary Devotee',
     'booking.primary.hint': 'Your contact details and your own offering.',
@@ -392,6 +394,8 @@ const TRANSLATIONS = {
     'auth.err.badEmail': 'സാധുവായ ഇമെയിൽ വിലാസം നൽകുക.',
     'auth.err.badPhone': 'സാധുവായ ഫോൺ നമ്പർ നൽകുക.',
     'auth.err.weakPassword': 'പാസ്‌വേഡ് കുറഞ്ഞത് 6 അക്ഷരങ്ങളെങ്കിലും വേണം.',
+    'auth.err.googleFailed': 'ഗൂഗിൾ സൈൻ-ഇൻ പരാജയപ്പെട്ടു. വീണ്ടും ശ്രമിക്കുക.',
+    'auth.or': 'അല്ലെങ്കിൽ',
 
     'booking.primary.title': 'പ്രധാന ഭക്തൻ',
     'booking.primary.hint': 'നിങ്ങളുടെ വിവരങ്ങളും വഴിപാടും.',

@@ -6,6 +6,8 @@ const UI = {
     this.markActiveNav();
     this.initHeaderScroll();
     this.bindLogout();
+    this.bindGoogleSignIn();
+    this.bindBookVazhipadGate();
   },
 
   bindLogout() {
@@ -17,6 +19,33 @@ const UI = {
         try { await Store.logoutUser(); } catch {}
       }
       window.location.href = 'index.html';
+    });
+  },
+
+  bindGoogleSignIn() {
+    document.addEventListener('click', e => {
+      const btn = e.target.closest('.js-google-signin');
+      if (!btn) return;
+      e.preventDefault();
+      if (window.GoogleAuth) window.GoogleAuth.signIn();
+    });
+  },
+
+  // Any link that points to /vazhipadu becomes a Google-sign-in gate when
+  // the user isn't logged in. After Google sign-in completes, they're sent
+  // straight to the booking page — regardless of admin / user role.
+  bindBookVazhipadGate() {
+    document.addEventListener('click', e => {
+      const link = e.target.closest(
+        'a[href="vazhipadu.html"], a[href$="/vazhipadu"], a[href$="/vazhipadu.html"]'
+      );
+      if (!link) return;
+      // Don't intercept Logout / Google sign-in / other custom-handled links
+      if (link.classList.contains('js-logout') || link.classList.contains('js-google-signin')) return;
+      if (typeof Store === 'undefined' || !Store.isUserLoggedIn) return;
+      if (Store.isUserLoggedIn()) return; // logged in → normal navigation
+      e.preventDefault();
+      if (window.GoogleAuth) window.GoogleAuth.signIn('vazhipadu.html');
     });
   },
 
@@ -315,6 +344,85 @@ const Reveal = {
 function initScrollReveal() { Reveal.init(); }
 window.Reveal = Reveal;
 
+/* ============== Google Sign-In (programmatic, no separate login page) ============== */
+const GoogleAuth = {
+  CLIENT_ID: '291408759953-hnub57gg3e3g9vqhtu44cm9hj164961d.apps.googleusercontent.com',
+  _client: null,
+  _loadPromise: null,
+  // Explicit redirect target chosen by the caller (e.g. "vazhipadu.html").
+  // Overrides the role-based default below.
+  _next: null,
+
+  // Lazy-loads the Google Identity Services library exactly once.
+  loadScript() {
+    if (window.google && window.google.accounts && window.google.accounts.oauth2) {
+      return Promise.resolve();
+    }
+    if (this._loadPromise) return this._loadPromise;
+    this._loadPromise = new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'https://accounts.google.com/gsi/client';
+      s.async = true;
+      s.defer = true;
+      s.onload = resolve;
+      s.onerror = () => reject(new Error('gis_load_failed'));
+      document.head.appendChild(s);
+    });
+    return this._loadPromise;
+  },
+
+  async _ensureClient() {
+    await this.loadScript();
+    if (this._client) return this._client;
+    const self = this;
+    this._client = window.google.accounts.oauth2.initTokenClient({
+      client_id: this.CLIENT_ID,
+      scope: 'openid email profile',
+      callback: async (resp) => {
+        if (!resp || !resp.access_token) {
+          if (typeof UI !== 'undefined' && UI.toast) {
+            UI.toast(I18N.t('auth.err.googleFailed'), 'error');
+          }
+          return;
+        }
+        try {
+          const r = await Store.googleLogin({ accessToken: resp.access_token });
+          if (!r.ok) {
+            UI.toast(I18N.t('auth.err.googleFailed'), 'error');
+            return;
+          }
+          // Explicit `next` wins (set by signIn(next) call).
+          // Otherwise: admins go to /admin, regular users to /vazhipadu.
+          const dest = self._next || (r.user.isAdmin ? 'admin.html' : 'vazhipadu.html');
+          self._next = null; // reset for the next call
+          window.location.href = dest;
+        } catch {
+          UI.toast(I18N.t('auth.err.googleFailed'), 'error');
+        }
+      }
+    });
+    return this._client;
+  },
+
+  // Open Google's account chooser. Must be called from a user-gesture handler.
+  // Pass `next` (e.g. "vazhipadu.html") to force the post-login destination.
+  async signIn(next) {
+    this._next = next || null;
+    try {
+      const client = await this._ensureClient();
+      client.requestAccessToken();
+    } catch (err) {
+      if (typeof UI !== 'undefined' && UI.toast) {
+        UI.toast('Could not load Google sign-in.', 'error');
+      }
+    }
+  },
+
+  // Pre-load the GIS script on idle so the popup opens instantly when clicked.
+  preload() { this.loadScript().catch(() => {}); }
+};
+window.GoogleAuth = GoogleAuth;
+
 document.addEventListener('DOMContentLoaded', () => {
   I18N.init();
   UI.init();
@@ -325,4 +433,6 @@ document.addEventListener('DOMContentLoaded', () => {
   initScrollReveal();
   initScrollTop();
   initTreeCardClicks();
+  // Warm up GIS in the background so the popup opens with no delay
+  GoogleAuth.preload();
 });

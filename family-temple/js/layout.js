@@ -12,8 +12,9 @@ const Layout = {
         <a href="vazhipadu.html" class="nav-cta nav-cta-primary" data-i18n="nav.book">Book Vazhipad</a>
       `;
     }
+    // Login button triggers Google's account-chooser popup directly (no separate login page).
     return `
-      <a href="login.html" class="nav-cta nav-cta-ghost" data-i18n="nav.login">Login</a>
+      <a href="#" class="nav-cta nav-cta-ghost js-google-signin" data-i18n="nav.login">Login</a>
       <a href="vazhipadu.html" class="nav-cta nav-cta-primary" data-i18n="nav.book">Book Vazhipad</a>
     `;
   },
@@ -22,7 +23,7 @@ const Layout = {
     if (this.isLoggedIn()) {
       return `<a href="#" class="nav-link nav-link-auth js-logout" data-i18n="nav.logout">Logout</a>`;
     }
-    return `<a href="login.html" class="nav-link nav-link-auth" data-i18n="nav.login">Login</a>`;
+    return `<a href="#" class="nav-link nav-link-auth js-google-signin" data-i18n="nav.login">Login</a>`;
   },
 
   isAdminLayout() {
