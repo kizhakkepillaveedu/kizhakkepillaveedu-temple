@@ -401,7 +401,7 @@ const Admin = {
     </tr></thead><tbody>
       ${list.map(f => `
         <tr>
-          <td data-label="Image">${f.image ? `<img class="row-thumb" src="${this.esc(f.image)}" alt="" />` : '<span class="row-thumb row-thumb-empty"></span>'}</td>
+          <td data-label="Image">${f.image ? `<img class="row-thumb" src="${this.esc(f.image)}" alt="" loading="lazy" decoding="async" />` : '<span class="row-thumb row-thumb-empty"></span>'}</td>
           <td data-label="Name"><strong>${this.esc(f.name_en)}</strong>${f.name_ml ? `<br/><small style="color:var(--color-text-muted);">${this.esc(f.name_ml)}</small>` : ''}</td>
           <td data-label="Date"><span class="tag confirmed">${this.esc(f.date_en || '')}</span></td>
           <td data-label="Description"><small>${this.esc((f.desc_en || '').slice(0, 80))}${(f.desc_en || '').length > 80 ? '…' : ''}</small></td>

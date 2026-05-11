@@ -12,6 +12,11 @@ export default async function handler(req, res) {
       try {
         await dbConnect();
         const items = await Puja.find({}).sort({ createdAt: 1 }).lean();
+        // Edge-cache at Vercel for 2 min, serve stale up to 10 min while
+        // revalidating in the background. Admin edits are visible within
+        // ~2 min; for everyone else this turns subsequent page loads into
+        // CDN hits (skips the serverless cold start completely).
+        res.setHeader('Cache-Control', 'public, s-maxage=120, stale-while-revalidate=600');
         return res.status(200).json({ ok: true, items });
       } catch (err) {
         return send500(res, err);

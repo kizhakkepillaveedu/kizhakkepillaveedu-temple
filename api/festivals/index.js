@@ -12,6 +12,7 @@ export default async function handler(req, res) {
       try {
         await dbConnect();
         const items = await Festival.find({}).sort({ createdAt: 1 }).lean();
+        res.setHeader('Cache-Control', 'public, s-maxage=120, stale-while-revalidate=600');
         return res.status(200).json({ ok: true, items });
       } catch (err) {
         return send500(res, err);

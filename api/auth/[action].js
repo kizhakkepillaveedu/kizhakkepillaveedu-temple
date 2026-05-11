@@ -105,6 +105,11 @@ async function handleGoogle(req, res) {
         const body = await readJson(req);
         let info;
 
+        // Kick off the DB connection in parallel with Google's verify call
+        // so the two slow operations (network round-trip + cold-start
+        // Mongo handshake) overlap instead of running serially.
+        const dbReady = dbConnect();
+
         // Path A — ID token from `google.accounts.id` (rendered button flow)
         if (body.credential) {
           const r = await fetch(
@@ -133,7 +138,7 @@ async function handleGoogle(req, res) {
           return res.status(401).json({ ok: false, error: 'email_not_verified' });
         }
 
-        await dbConnect();
+        await dbReady;
         const email = String(info.email).toLowerCase();
         const googleId = String(info.sub);
         const displayName = clean(info.name || email.split('@')[0], 80);
