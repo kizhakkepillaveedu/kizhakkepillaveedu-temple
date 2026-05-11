@@ -346,7 +346,7 @@ window.Reveal = Reveal;
 
 /* ============== Google Sign-In (programmatic, no separate login page) ============== */
 const GoogleAuth = {
-  CLIENT_ID: '291408759953-hnub57gg3e3g9vqhtu44cm9hj164961d.apps.googleusercontent.com',
+  CLIENT_ID: '291408759953-330b4ch8nd56dr115m631b1rpfh4nj0b.apps.googleusercontent.com',
   _client: null,
   _scriptLoadPromise: null,
   _next: null,
