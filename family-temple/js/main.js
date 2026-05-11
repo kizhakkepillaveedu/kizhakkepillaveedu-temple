@@ -348,18 +348,16 @@ window.Reveal = Reveal;
 const GoogleAuth = {
   CLIENT_ID: '291408759953-hnub57gg3e3g9vqhtu44cm9hj164961d.apps.googleusercontent.com',
   _client: null,
-  _loadPromise: null,
-  // Explicit redirect target chosen by the caller (e.g. "vazhipadu.html").
-  // Overrides the role-based default below.
+  _scriptLoadPromise: null,
   _next: null,
 
   // Lazy-loads the Google Identity Services library exactly once.
-  loadScript() {
+  _loadScript() {
     if (window.google && window.google.accounts && window.google.accounts.oauth2) {
       return Promise.resolve();
     }
-    if (this._loadPromise) return this._loadPromise;
-    this._loadPromise = new Promise((resolve, reject) => {
+    if (this._scriptLoadPromise) return this._scriptLoadPromise;
+    this._scriptLoadPromise = new Promise((resolve, reject) => {
       const s = document.createElement('script');
       s.src = 'https://accounts.google.com/gsi/client';
       s.async = true;
@@ -368,18 +366,21 @@ const GoogleAuth = {
       s.onerror = () => reject(new Error('gis_load_failed'));
       document.head.appendChild(s);
     });
-    return this._loadPromise;
+    return this._scriptLoadPromise;
   },
 
-  async _ensureClient() {
-    await this.loadScript();
-    if (this._client) return this._client;
+  // Synchronously initialise the OAuth client once GIS is loaded.
+  // After this returns successfully, `_client` is ready for `requestAccessToken()`.
+  _initClient() {
+    if (this._client) return true;
+    if (!window.google || !window.google.accounts || !window.google.accounts.oauth2) return false;
     const self = this;
     this._client = window.google.accounts.oauth2.initTokenClient({
       client_id: this.CLIENT_ID,
       scope: 'openid email profile',
       callback: async (resp) => {
         if (!resp || !resp.access_token) {
+          console.warn('[GoogleAuth] no access token in callback', resp);
           if (typeof UI !== 'undefined' && UI.toast) {
             UI.toast(I18N.t('auth.err.googleFailed'), 'error');
           }
@@ -388,38 +389,66 @@ const GoogleAuth = {
         try {
           const r = await Store.googleLogin({ accessToken: resp.access_token });
           if (!r.ok) {
-            UI.toast(I18N.t('auth.err.googleFailed'), 'error');
+            console.error('[GoogleAuth] backend rejected sign-in', r);
+            if (typeof UI !== 'undefined' && UI.toast) {
+              UI.toast(I18N.t('auth.err.googleFailed') + ' (' + (r.error || 'error') + ')', 'error');
+            }
             return;
           }
-          // Explicit `next` wins (set by signIn(next) call).
-          // Otherwise: admins go to /admin, regular users to /vazhipadu.
           const dest = self._next || (r.user.isAdmin ? 'admin.html' : 'vazhipadu.html');
-          self._next = null; // reset for the next call
+          self._next = null;
           window.location.href = dest;
-        } catch {
-          UI.toast(I18N.t('auth.err.googleFailed'), 'error');
+        } catch (err) {
+          console.error('[GoogleAuth] network error during sign-in', err);
+          if (typeof UI !== 'undefined' && UI.toast) {
+            UI.toast(I18N.t('auth.err.googleFailed') + ' (network)', 'error');
+          }
+        }
+      },
+      error_callback: (err) => {
+        console.warn('[GoogleAuth] popup error', err);
+        // Typical errors: popup_closed, popup_failed_to_open, access_denied
+        if (typeof UI !== 'undefined' && UI.toast && err && err.type !== 'popup_closed') {
+          UI.toast(I18N.t('auth.err.googleFailed') + ' (' + err.type + ')', 'error');
         }
       }
     });
-    return this._client;
+    return true;
   },
 
-  // Open Google's account chooser. Must be called from a user-gesture handler.
-  // Pass `next` (e.g. "vazhipadu.html") to force the post-login destination.
-  async signIn(next) {
+  // Synchronous so it stays in the user-gesture chain — browsers block popups
+  // opened from microtask callbacks (any `await` between click and popup
+  // request will get the popup blocked).
+  signIn(next) {
     this._next = next || null;
-    try {
-      const client = await this._ensureClient();
-      client.requestAccessToken();
-    } catch (err) {
+    if (this._initClient() && this._client) {
+      try {
+        this._client.requestAccessToken();
+      } catch (err) {
+        console.error('[GoogleAuth] requestAccessToken threw', err);
+        if (typeof UI !== 'undefined' && UI.toast) {
+          UI.toast('Could not open Google sign-in. Please try again.', 'error');
+        }
+      }
+      return;
+    }
+    // GIS not ready yet — load it then try again (popup will likely be blocked
+    // on this first attempt, but the second click works since client is now ready).
+    if (typeof UI !== 'undefined' && UI.toast) {
+      UI.toast('Loading Google sign-in… please click again.', 'success');
+    }
+    this._loadScript().then(() => this._initClient()).catch(err => {
+      console.error('[GoogleAuth] GIS script failed to load', err);
       if (typeof UI !== 'undefined' && UI.toast) {
         UI.toast('Could not load Google sign-in.', 'error');
       }
-    }
+    });
   },
 
-  // Pre-load the GIS script on idle so the popup opens instantly when clicked.
-  preload() { this.loadScript().catch(() => {}); }
+  // Eagerly load the script + init the client on page load so signIn() is sync.
+  preload() {
+    this._loadScript().then(() => this._initClient()).catch(() => {});
+  }
 };
 window.GoogleAuth = GoogleAuth;
 
